@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rabbithole-agent"
+version = "0.2.0"
+description = "A market intelligence agent combining private semantic RAG, Tavily search, and Zhipu synthesis."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "pypdf>=4.0",
+    "python-dotenv>=1.0",
+    "sentence-transformers>=3.0",
+    "zhipuai>=2.1",
+]
+
+[project.scripts]
+rabbithole = "rabbithole.cli:main"
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
