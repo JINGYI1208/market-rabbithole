@@ -39,7 +39,8 @@
         "evidence_kind": "FACT",
         "time_period": "current or forward",
         "assumptions": [],
-        "relevance": 0.321
+        "relevance": 0.321,
+        "source_quality": "LOCAL_CONTEXT"
       },
       {
         "id": "local:ai_semiconductors-1",
@@ -57,7 +58,8 @@
         "evidence_kind": "FACT",
         "time_period": "current or forward",
         "assumptions": [],
-        "relevance": 0.281
+        "relevance": 0.281,
+        "source_quality": "LOCAL_CONTEXT"
       },
       {
         "id": "local:ai_semiconductors-0",
@@ -75,7 +77,8 @@
         "evidence_kind": "FACT",
         "time_period": "current or forward",
         "assumptions": [],
-        "relevance": 0.254
+        "relevance": 0.254,
+        "source_quality": "LOCAL_CONTEXT"
       },
       {
         "id": "web:https://example.com/ai_semiconductors/1",
@@ -95,7 +98,8 @@
         "assumptions": [
           "Other market drivers remain broadly stable"
         ],
-        "relevance": null
+        "relevance": null,
+        "source_quality": "OTHER_WEB"
       },
       {
         "id": "web:https://example.com/ai_semiconductors/2",
@@ -115,7 +119,8 @@
         "assumptions": [
           "Other market drivers remain broadly stable"
         ],
-        "relevance": null
+        "relevance": null,
+        "source_quality": "OTHER_WEB"
       }
     ],
     "conflicts": [
@@ -163,7 +168,9 @@
             "L1"
           ],
           "uncertainty": "The conclusion depends on the stated horizon.",
-          "citation_verified": true
+          "citation_verified": true,
+          "citation_ids_valid": true,
+          "support_status": "SUPPORTED"
         },
         {
           "statement": "However, premium valuation multiples assume sustained growth and leave equities exposed if deployment or monetization slows.",
@@ -171,10 +178,14 @@
             "L2"
           ],
           "uncertainty": "The opposing signal may use different assumptions.",
-          "citation_verified": true
+          "citation_verified": true,
+          "citation_ids_valid": true,
+          "support_status": "SUPPORTED"
         }
       ],
-      "unsupported_claims": []
+      "unsupported_claims": [],
+      "evidence_strength_reason": "the evidence set is limited or has fewer than two high-quality public sources",
+      "partial_fallback": false
     },
     "trace": [
       {
@@ -195,7 +206,8 @@
         "status": "ok",
         "metadata": {
           "action": "search_local",
-          "angle": "Fundamentals vs expectations"
+          "angle": "Fundamentals vs expectations",
+          "source": "llm"
         }
       },
       {
@@ -236,7 +248,8 @@
         "status": "ok",
         "metadata": {
           "action": "analyze_evidence",
-          "angle": ""
+          "angle": "",
+          "source": "llm"
         }
       },
       {
@@ -275,7 +288,8 @@
         "status": "ok",
         "metadata": {
           "action": "search_web",
-          "angle": "Fundamentals vs expectations"
+          "angle": "Fundamentals vs expectations",
+          "source": "llm"
         }
       },
       {
@@ -300,12 +314,13 @@
       },
       {
         "event_type": "search_performed",
-        "detail": "Web research added 1 new evidence items",
+        "detail": "Web research added 1 new evidence items; rejected 0 low-quality or irrelevant results",
         "iteration": 3,
         "tool": "search_web",
         "status": "ok",
         "metadata": {
-          "result_count": 1
+          "result_count": 1,
+          "rejected_count": 0
         }
       },
       {
@@ -316,7 +331,8 @@
         "status": "ok",
         "metadata": {
           "action": "analyze_evidence",
-          "angle": ""
+          "angle": "",
+          "source": "llm"
         }
       },
       {
@@ -355,7 +371,8 @@
         "status": "ok",
         "metadata": {
           "action": "search_web",
-          "angle": "Timing and assumptions"
+          "angle": "Timing and assumptions",
+          "source": "llm"
         }
       },
       {
@@ -380,12 +397,13 @@
       },
       {
         "event_type": "search_performed",
-        "detail": "Web research added 1 new evidence items",
+        "detail": "Web research added 1 new evidence items; rejected 0 low-quality or irrelevant results",
         "iteration": 5,
         "tool": "search_web",
         "status": "ok",
         "metadata": {
-          "result_count": 1
+          "result_count": 1,
+          "rejected_count": 0
         }
       },
       {
@@ -396,7 +414,8 @@
         "status": "ok",
         "metadata": {
           "action": "analyze_evidence",
-          "angle": ""
+          "angle": "",
+          "source": "llm"
         }
       },
       {
@@ -435,7 +454,8 @@
         "status": "ok",
         "metadata": {
           "action": "stop",
-          "angle": ""
+          "angle": "",
+          "source": "llm"
         }
       },
       {
@@ -448,12 +468,12 @@
       },
       {
         "event_type": "citation_verification_completed",
-        "detail": "Verified 2 cited conclusions; 0 lacked valid evidence links",
+        "detail": "Found 2 conclusions with passage support; 0 were unsupported or weakly linked",
         "iteration": 7,
         "tool": "citation_verifier",
         "status": "ok",
         "metadata": {
-          "verified": 2,
+          "supported": 2,
           "unsupported": 0
         }
       }

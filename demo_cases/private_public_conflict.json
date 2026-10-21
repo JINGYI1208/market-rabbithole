@@ -39,7 +39,8 @@
         "evidence_kind": "FACT",
         "time_period": "current or forward",
         "assumptions": [],
-        "relevance": 0.415
+        "relevance": 0.415,
+        "source_quality": "LOCAL_CONTEXT"
       },
       {
         "id": "local:private_public_conflict-2",
@@ -59,7 +60,8 @@
         "assumptions": [
           "Other market drivers remain broadly stable"
         ],
-        "relevance": 0.261
+        "relevance": 0.261,
+        "source_quality": "LOCAL_CONTEXT"
       },
       {
         "id": "local:private_public_conflict-1",
@@ -77,45 +79,8 @@
         "evidence_kind": "FACT",
         "time_period": "current or forward",
         "assumptions": [],
-        "relevance": 0.197
-      },
-      {
-        "id": "web:https://example.com/private_public_conflict/1",
-        "source_type": "WEB",
-        "title": "Fixture public source 1",
-        "source": "example.com",
-        "locator": "https://example.com/private_public_conflict/1",
-        "date": "2026-10-01",
-        "excerpt": "Public company guidance forecasts stronger second-half demand and cites a growing pipeline of customer projects.",
-        "research_angle": "Fundamentals vs expectations",
-        "citation_id": "W1",
-        "stance": "SUPPORT",
-        "key_claim": "Public company guidance forecasts stronger second-half demand and cites a growing pipeline of customer projects.",
-        "explanation": "Fixture classification grounded in the recorded passage.",
-        "evidence_kind": "FORECAST",
-        "time_period": "current or forward",
-        "assumptions": [
-          "Other market drivers remain broadly stable"
-        ],
-        "relevance": null
-      },
-      {
-        "id": "web:https://example.com/private_public_conflict/2",
-        "source_type": "WEB",
-        "title": "Fixture public source 2",
-        "source": "example.com",
-        "locator": "https://example.com/private_public_conflict/2",
-        "date": "2026-10-01",
-        "excerpt": "A subsequent industry survey reports mixed end-market conditions, leaving the timing of recovery unresolved.",
-        "research_angle": "Fundamentals vs expectations",
-        "citation_id": "W2",
-        "stance": "SUPPORT",
-        "key_claim": "A subsequent industry survey reports mixed end-market conditions, leaving the timing of recovery unresolved.",
-        "explanation": "Fixture classification grounded in the recorded passage.",
-        "evidence_kind": "FACT",
-        "time_period": "current or forward",
-        "assumptions": [],
-        "relevance": null
+        "relevance": 0.197,
+        "source_quality": "LOCAL_CONTEXT"
       }
     ],
     "conflicts": [
@@ -161,7 +126,9 @@
             "L2"
           ],
           "uncertainty": "The conclusion depends on the stated horizon.",
-          "citation_verified": true
+          "citation_verified": true,
+          "citation_ids_valid": true,
+          "support_status": "SUPPORTED"
         },
         {
           "statement": "Private distributor checks report slower order growth and elevated customer inventories during the current quarter.",
@@ -169,10 +136,14 @@
             "L1"
           ],
           "uncertainty": "The opposing signal may use different assumptions.",
-          "citation_verified": true
+          "citation_verified": true,
+          "citation_ids_valid": true,
+          "support_status": "SUPPORTED"
         }
       ],
-      "unsupported_claims": []
+      "unsupported_claims": [],
+      "evidence_strength_reason": "evidence lacks local/web source diversity",
+      "partial_fallback": false
     },
     "trace": [
       {
@@ -193,7 +164,8 @@
         "status": "ok",
         "metadata": {
           "action": "search_local",
-          "angle": "Fundamentals vs expectations"
+          "angle": "Fundamentals vs expectations",
+          "source": "llm"
         }
       },
       {
@@ -234,7 +206,8 @@
         "status": "ok",
         "metadata": {
           "action": "analyze_evidence",
-          "angle": ""
+          "angle": "",
+          "source": "llm"
         }
       },
       {
@@ -273,7 +246,8 @@
         "status": "ok",
         "metadata": {
           "action": "search_web",
-          "angle": "Fundamentals vs expectations"
+          "angle": "Fundamentals vs expectations",
+          "source": "llm"
         }
       },
       {
@@ -298,166 +272,83 @@
       },
       {
         "event_type": "search_performed",
-        "detail": "Web research added 1 new evidence items",
+        "detail": "Web research added 0 new evidence items; rejected 1 low-quality or irrelevant results",
         "iteration": 3,
         "tool": "search_web",
         "status": "ok",
         "metadata": {
-          "result_count": 1
+          "result_count": 0,
+          "rejected_count": 1
         }
       },
       {
-        "event_type": "agent_decision",
-        "detail": "Classify newly retrieved evidence before deciding what is missing.",
-        "iteration": 4,
-        "tool": "analyze_evidence",
-        "status": "ok",
-        "metadata": {
-          "action": "analyze_evidence",
-          "angle": ""
-        }
-      },
-      {
-        "event_type": "tool_selected",
-        "detail": "Agent selected structured evidence analysis",
-        "iteration": 4,
-        "tool": "analyze_evidence",
-        "status": "ok",
+        "event_type": "strategy_reconsidered",
+        "detail": "Web retrieval produced no usable marginal evidence; the next search must target a different evidence gap.",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "warning",
         "metadata": {}
       },
       {
-        "event_type": "evidence_analyzed",
-        "detail": "Analyzed 4 evidence items",
+        "event_type": "decision_rejected",
+        "detail": "Search decision repeated a near-duplicate query that produced zero new evidence",
         "iteration": 4,
-        "tool": "analyze_evidence",
-        "status": "ok",
-        "metadata": {
-          "evidence_count": 4
-        }
-      },
-      {
-        "event_type": "contradiction_found",
-        "detail": "Found 1 research angles with opposing evidence",
-        "iteration": 4,
-        "tool": "analyze_evidence",
-        "status": "ok",
-        "metadata": {
-          "conflict_count": 1
-        }
-      },
-      {
-        "event_type": "agent_decision",
-        "detail": "Investigate the detected contradiction before stopping.",
-        "iteration": 5,
-        "tool": "search_web",
-        "status": "ok",
-        "metadata": {
-          "action": "search_web",
-          "angle": "Timing and assumptions"
-        }
-      },
-      {
-        "event_type": "evidence_gap_detected",
-        "detail": "The conflict may reflect different periods or assumptions.",
-        "iteration": 5,
-        "tool": "search_web",
-        "status": "ok",
-        "metadata": {
-          "angle": "Timing and assumptions"
-        }
-      },
-      {
-        "event_type": "tool_selected",
-        "detail": "Agent selected live web research",
-        "iteration": 5,
-        "tool": "search_web",
-        "status": "ok",
-        "metadata": {
-          "angle": "Timing and assumptions"
-        }
-      },
-      {
-        "event_type": "search_performed",
-        "detail": "Web research added 1 new evidence items",
-        "iteration": 5,
-        "tool": "search_web",
-        "status": "ok",
-        "metadata": {
-          "result_count": 1
-        }
-      },
-      {
-        "event_type": "agent_decision",
-        "detail": "Classify newly retrieved evidence before deciding what is missing.",
-        "iteration": 6,
-        "tool": "analyze_evidence",
-        "status": "ok",
-        "metadata": {
-          "action": "analyze_evidence",
-          "angle": ""
-        }
-      },
-      {
-        "event_type": "tool_selected",
-        "detail": "Agent selected structured evidence analysis",
-        "iteration": 6,
-        "tool": "analyze_evidence",
-        "status": "ok",
+        "tool": "decision_validator",
+        "status": "rejected",
         "metadata": {}
       },
       {
-        "event_type": "evidence_analyzed",
-        "detail": "Analyzed 5 evidence items",
-        "iteration": 6,
-        "tool": "analyze_evidence",
+        "event_type": "decision_rejected",
+        "detail": "Search decision repeated a near-duplicate query that produced zero new evidence",
+        "iteration": 4,
+        "tool": "decision_validator",
+        "status": "rejected",
+        "metadata": {}
+      },
+      {
+        "event_type": "decision_recovered",
+        "detail": "Deterministic recovery stopped because the programmatic evidence threshold was satisfied.",
+        "iteration": 4,
+        "tool": "stop",
         "status": "ok",
         "metadata": {
-          "evidence_count": 5
+          "source": "deterministic_recovery"
         }
       },
       {
-        "event_type": "contradiction_found",
-        "detail": "Found 1 research angles with opposing evidence",
-        "iteration": 6,
-        "tool": "analyze_evidence",
-        "status": "ok",
-        "metadata": {
-          "conflict_count": 1
-        }
-      },
-      {
-        "event_type": "agent_decision",
-        "detail": "The evidence is analyzed, the contradiction is explicit, and the follow-up budget has been used selectively.",
-        "iteration": 7,
+        "event_type": "fallback_decision",
+        "detail": "Deterministic recovery stopped because the programmatic evidence threshold was satisfied.",
+        "iteration": 4,
         "tool": "stop",
         "status": "ok",
         "metadata": {
           "action": "stop",
-          "angle": ""
+          "angle": "",
+          "source": "deterministic_recovery"
         }
       },
       {
         "event_type": "research_stopped",
-        "detail": "The evidence is analyzed, the contradiction is explicit, and the follow-up budget has been used selectively.",
-        "iteration": 7,
+        "detail": "Deterministic recovery stopped because the programmatic evidence threshold was satisfied.",
+        "iteration": 4,
         "tool": "stop",
         "status": "ok",
         "metadata": {}
       },
       {
         "event_type": "citation_verification_completed",
-        "detail": "Verified 2 cited conclusions; 0 lacked valid evidence links",
-        "iteration": 7,
+        "detail": "Found 2 conclusions with passage support; 0 were unsupported or weakly linked",
+        "iteration": 4,
         "tool": "citation_verifier",
         "status": "ok",
         "metadata": {
-          "verified": 2,
+          "supported": 2,
           "unsupported": 0
         }
       }
     ],
     "warnings": [],
-    "stop_reason": "The evidence is analyzed, the contradiction is explicit, and the follow-up budget has been used selectively.",
-    "iterations": 7
+    "stop_reason": "Deterministic recovery stopped because the programmatic evidence threshold was satisfied.",
+    "iterations": 4
   }
 }

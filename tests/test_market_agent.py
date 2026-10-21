@@ -318,9 +318,126 @@ def test_invalid_citation_is_flagged_as_unsupported():
     class BadCitationLLM(AgenticFakeLLM):
         def complete_json(self, system, user):
             if "write a concise market intelligence brief" in system.lower():
-                return {"current_view": "Unsupported claim [Z9].", "conclusions": [{"statement": "Unsupported claim.", "citations": ["Z9"], "uncertainty": "Unknown"}], "key_drivers": [], "conflicting_signals": [], "evidence_strength": "LOW", "monitor_next": []}
+                return {"current_view": "Unsupported claim [Z9].", "conclusions": [{"statement": "Unsupported claim.", "citations": ["Z9"], "uncertainty": "Unknown"}], "key_drivers": ["Supply conditions matter."], "conflicting_signals": [], "evidence_strength": "LOW", "monitor_next": ["Pipeline flows"]}
             return super().complete_json(system, user)
 
     result = build_agent(llm=BadCitationLLM()).research("What drives gas prices?")
     assert result.brief.conclusions[0].citation_verified is False
     assert result.brief.unsupported_claims == ["Unsupported claim."]
+
+
+def test_repeated_zero_gain_local_query_is_rejected_and_strategy_changes():
+    class RepetitiveLLM(AgenticFakeLLM):
+        def complete_json(self, system, user):
+            if "bounded market research loop" in system.lower():
+                state = json.loads(user.split("Research state: ", 1)[1].split("\nReturn:", 1)[0])
+                if state["evidence"] and any(not item["claim"] for item in state["evidence"]):
+                    return {"action": "analyze_evidence", "query": "", "angle": "", "rationale": "Analyze."}
+                return {"action": "search_local", "query": "pipeline supply", "angle": "Supply", "rationale": "Repeat."}
+            return super().complete_json(system, user)
+
+    result = build_agent(llm=RepetitiveLLM(), max_iterations=5).research("What drives gas prices?")
+
+    local_searches = [event for event in result.trace if event.event_type == "search_performed" and event.tool == "search_local"]
+    assert len(local_searches) == 1
+    assert any("near-duplicate" in event.detail for event in result.trace if event.event_type == "decision_rejected")
+    assert any(event.event_type == "fallback_decision" and event.metadata["action"] == "search_web" for event in result.trace)
+
+
+def test_web_quality_filter_rejects_navigation_irrelevance_and_duplicate_urls():
+    evidence = []
+    seen = set()
+    results = [
+        {"title": "menu", "url": "https://bad.example/nav", "source": "bad.example", "date": "", "content": "AI semiconductor links and navigation content only."},
+        {"title": "Weather bulletin", "url": "https://weather.example/today", "source": "weather.example", "date": "2026-10-01", "content": "Heavy rain is forecast across several coastal regions this week."},
+        {"title": "Chipmaker quarterly results", "url": "https://chip.example/investors/q3?tracking=1", "source": "chip.example", "date": "2026-10-01", "content": "AI semiconductor data-center revenue increased while management warned that advanced packaging supply remains constrained."},
+    ]
+
+    added, rejected = MarketRabbitHoleAgent._add_web_evidence(results, "AI semiconductor revenue supply", "Supply", evidence, seen, 2)
+    added_again, rejected_again = MarketRabbitHoleAgent._add_web_evidence(results[2:], "AI semiconductor revenue supply", "Supply", evidence, seen, 2)
+
+    assert (added, rejected) == (1, 2)
+    assert (added_again, rejected_again) == (0, 1)
+    assert evidence[0].title == "Chipmaker quarterly results"
+    assert evidence[0].source_quality == "PRIMARY"
+
+
+def test_placeholder_synthesis_is_retried_then_marked_partial():
+    class PlaceholderLLM(AgenticFakeLLM):
+        def complete_json(self, system, user):
+            if "write a concise market intelligence brief" in system.lower():
+                return {"current_view": "2-4 cited sentences", "conclusions": [{"statement": "grounded conclusion", "citations": ["L1"]}], "key_drivers": ["3-5 cited directional findings"], "conflicting_signals": [], "evidence_strength": "HIGH", "monitor_next": ["2-3 indicators"]}
+            return super().complete_json(system, user)
+
+    result = build_agent(llm=PlaceholderLLM()).research("What drives gas prices?")
+
+    assert result.brief.partial_fallback is True
+    assert result.brief.current_view.startswith("Partial evidence report:")
+    assert "2-4 cited sentences" not in json.dumps(result.to_dict())
+    assert len([event for event in result.trace if event.event_type == "synthesis_rejected"]) == 2
+
+
+def test_placeholder_synthesis_successful_retry_is_kept():
+    class CorrectingLLM(AgenticFakeLLM):
+        synthesis_calls = 0
+
+        def complete_json(self, system, user):
+            if "write a concise market intelligence brief" in system.lower():
+                self.synthesis_calls += 1
+                if self.synthesis_calls == 1:
+                    return {"current_view": "2-4 cited sentences", "conclusions": [], "key_drivers": [], "conflicting_signals": [], "evidence_strength": "HIGH", "monitor_next": []}
+            return super().complete_json(system, user)
+
+    result = build_agent(llm=CorrectingLLM()).research("What drives gas prices?")
+
+    assert result.brief.partial_fallback is False
+    assert result.brief.current_view.startswith("Supply is tighter")
+    assert len([event for event in result.trace if event.event_type == "synthesis_rejected"]) == 1
+
+
+def test_existing_citation_does_not_verify_unsupported_number():
+    class UnsupportedNumberLLM(AgenticFakeLLM):
+        def complete_json(self, system, user):
+            if "write a concise market intelligence brief" in system.lower():
+                return {"current_view": "Supply is tighter.", "conclusions": [{"statement": "Revenue increased 73%.", "citations": ["L1"], "uncertainty": ""}], "key_drivers": ["Pipeline supply is falling."], "conflicting_signals": [], "evidence_strength": "HIGH", "monitor_next": ["Pipeline flows"]}
+            return super().complete_json(system, user)
+
+    result = build_agent(llm=UnsupportedNumberLLM()).research("What drives gas prices?")
+    conclusion = result.brief.conclusions[0]
+
+    assert conclusion.citation_ids_valid is True
+    assert conclusion.support_status == "UNSUPPORTED"
+    assert conclusion.citation_verified is False
+    assert result.brief.evidence_strength == "LOW"
+
+
+def test_current_question_without_web_evidence_is_capped_low():
+    class EmptyWeb:
+        def search(self, query, max_results=1):
+            return []
+
+    result = build_agent(web=EmptyWeb(), max_iterations=5).research("What is the latest gas market outlook?")
+
+    assert result.brief.evidence_strength == "LOW"
+    assert "no usable live-web source" in result.brief.evidence_strength_reason
+    assert any(event.event_type == "strategy_reconsidered" for event in result.trace)
+
+
+def test_continuation_context_guides_new_run_without_becoming_evidence():
+    class CapturingLLM(AgenticFakeLLM):
+        planner_user = ""
+
+        def complete_json(self, system, user):
+            if "initial plan" in system.lower():
+                self.planner_user = user
+            return super().complete_json(system, user)
+
+    llm = CapturingLLM()
+    agent = build_agent(llm=llm)
+    context = "Historical research context (background only; claims are not current evidence): prior demand conclusion [W1]."
+
+    result = agent.research("What changed since the prior run?", historical_context=context)
+
+    assert context in llm.planner_user
+    assert result.question == "What changed since the prior run?"
+    assert all("prior demand conclusion" not in item.excerpt for item in result.evidence)

@@ -1,0 +1,131 @@
+{
+  "method": "Deterministic same-fixture behavioral comparison; no live APIs or model calls.",
+  "baseline": "Reproduction of the former three-angle local+web sequential collection policy, not a replay of a historical LLM response.",
+  "cases": [
+    {
+      "case": "recent_web",
+      "original_sequential": {
+        "relevant_evidence": 3,
+        "irrelevant_evidence": 1,
+        "high_quality_web": 2,
+        "duplicate_sources": 0,
+        "conclusion_specificity": 1,
+        "unsupported_claims": 0,
+        "evidence_strength": "MEDIUM",
+        "strength_appropriate": true,
+        "research_searches": 6,
+        "report_complete": true,
+        "citation_traceability": 1.0
+      },
+      "upgraded_agent": {
+        "relevant_evidence": 3,
+        "irrelevant_evidence": 0,
+        "high_quality_web": 2,
+        "duplicate_sources": 0,
+        "conclusion_specificity": 1,
+        "unsupported_claims": 0,
+        "evidence_strength": "MEDIUM",
+        "strength_appropriate": true,
+        "research_searches": 2,
+        "report_complete": true,
+        "citation_traceability": 1.0,
+        "web_rejected": 1,
+        "web_added": 2
+      }
+    },
+    {
+      "case": "uploaded_private",
+      "original_sequential": {
+        "relevant_evidence": 2,
+        "irrelevant_evidence": 1,
+        "high_quality_web": 0,
+        "duplicate_sources": 0,
+        "conclusion_specificity": 1,
+        "unsupported_claims": 0,
+        "evidence_strength": "MEDIUM",
+        "strength_appropriate": true,
+        "research_searches": 6,
+        "report_complete": true,
+        "citation_traceability": 1.0
+      },
+      "upgraded_agent": {
+        "relevant_evidence": 2,
+        "irrelevant_evidence": 1,
+        "high_quality_web": 0,
+        "duplicate_sources": 0,
+        "conclusion_specificity": 1,
+        "unsupported_claims": 0,
+        "evidence_strength": "MEDIUM",
+        "strength_appropriate": true,
+        "research_searches": 2,
+        "report_complete": true,
+        "citation_traceability": 1.0,
+        "web_rejected": 0,
+        "web_added": 1
+      }
+    },
+    {
+      "case": "conflicting_evidence",
+      "original_sequential": {
+        "relevant_evidence": 3,
+        "irrelevant_evidence": 0,
+        "high_quality_web": 2,
+        "duplicate_sources": 0,
+        "conclusion_specificity": 3,
+        "unsupported_claims": 0,
+        "evidence_strength": "MEDIUM",
+        "strength_appropriate": true,
+        "research_searches": 6,
+        "report_complete": true,
+        "citation_traceability": 1.0
+      },
+      "upgraded_agent": {
+        "relevant_evidence": 3,
+        "irrelevant_evidence": 0,
+        "high_quality_web": 2,
+        "duplicate_sources": 0,
+        "conclusion_specificity": 3,
+        "unsupported_claims": 0,
+        "evidence_strength": "MEDIUM",
+        "strength_appropriate": true,
+        "research_searches": 3,
+        "report_complete": true,
+        "citation_traceability": 1.0,
+        "web_rejected": 0,
+        "web_added": 2
+      }
+    },
+    {
+      "case": "missing_evidence",
+      "original_sequential": {
+        "relevant_evidence": 0,
+        "irrelevant_evidence": 3,
+        "high_quality_web": 0,
+        "duplicate_sources": 0,
+        "conclusion_specificity": 0,
+        "unsupported_claims": 1,
+        "evidence_strength": "MEDIUM",
+        "strength_appropriate": false,
+        "research_searches": 6,
+        "report_complete": true,
+        "citation_traceability": 1.0
+      },
+      "upgraded_agent": {
+        "relevant_evidence": 0,
+        "irrelevant_evidence": 0,
+        "high_quality_web": 0,
+        "duplicate_sources": 0,
+        "conclusion_specificity": 0,
+        "unsupported_claims": 0,
+        "evidence_strength": "LOW",
+        "strength_appropriate": true,
+        "research_searches": 2,
+        "report_complete": false,
+        "citation_traceability": 0.0,
+        "web_rejected": 2,
+        "web_added": 0
+      }
+    }
+  ],
+  "limitations": "Synthetic fixtures test regressions and policy behavior only. Specificity counts relevant passages containing explicit numbers/dates; completeness is evidence availability, not investment-answer correctness."
+}
