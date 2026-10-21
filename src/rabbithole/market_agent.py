@@ -139,6 +139,9 @@ class AgentDecision:
     query: str = ""
     angle: str = ""
     evidence_gap: str = ""
+    source: str = "llm"
+    rejection_reasons: list[str] = field(default_factory=list)
+    incomplete_stop: bool = False
 
 
 EventCallback = Callable[[ResearchEvent], None]
@@ -197,11 +200,22 @@ class MarketRabbitHoleAgent:
             iterations = iteration
             conflicts = self._detect_conflicts(evidence)
             decision = self._decide(question, angles, evidence, conflicts, budgets, iteration)
-            record("agent_decision", decision.rationale, iteration, decision.action, action=decision.action, angle=decision.angle)
+            for reason in decision.rejection_reasons:
+                record("decision_rejected", reason, iteration, "decision_validator", "rejected")
+            if decision.source == "deterministic_recovery":
+                record("decision_recovered", decision.rationale, iteration, decision.action, source=decision.source)
+            elif decision.source == "llm_retry":
+                record("decision_retry_accepted", "Corrected model decision passed validation", iteration, decision.action)
+            decision_event = "agent_decision" if decision.source.startswith("llm") else "fallback_decision"
+            record(decision_event, decision.rationale, iteration, decision.action, action=decision.action, angle=decision.angle, source=decision.source)
             if decision.evidence_gap:
                 record("evidence_gap_detected", decision.evidence_gap, iteration, decision.action, angle=decision.angle)
 
             if decision.action == "stop":
+                if decision.incomplete_stop:
+                    stop_reason = decision.rationale
+                    record("research_stopped", stop_reason, iteration, "deterministic_recovery", incomplete=True)
+                    break
                 allowed, reason = self._can_stop(evidence)
                 if allowed:
                     stop_reason = decision.rationale or "agent judged the evidence sufficient"
@@ -274,20 +288,63 @@ class MarketRabbitHoleAgent:
             "remaining_budget": budgets,
             "minimum_evidence": self.limits.min_evidence,
         }
-        payload = self.llm.complete_json(
-            "You control a bounded market research loop. Choose exactly one next action based on actual state: search_local, search_web, analyze_evidence, or stop. Search when a named evidence gap remains; analyze after useful new evidence; investigate contradictions with a targeted search; stop only when evidence has been analyzed and is sufficient for a cautious brief. Return JSON only. Never claim a tool ran.",
-            f'''Question: {question}\nResearch state: {json.dumps(state, ensure_ascii=False)}\nReturn: {{"action":"search_local|search_web|analyze_evidence|stop","query":"tool query or empty","angle":"existing angle name or empty","rationale":"decision reason","evidence_gap":"specific missing evidence or empty"}}''',
-        )
-        action = str(payload.get("action", "")).lower()
+        system = "You control a bounded market research loop. Choose exactly one next action based on actual state: search_local, search_web, analyze_evidence, or stop. Search when a named evidence gap remains; analyze after useful new evidence; investigate contradictions with a targeted search; stop only when evidence has been analyzed and is sufficient for a cautious brief. Return JSON only. Never claim a tool ran."
+        user = f'''Question: {question}\nResearch state: {json.dumps(state, ensure_ascii=False)}\nReturn: {{"action":"search_local|search_web|analyze_evidence|stop","query":"tool query or empty","angle":"existing angle name or empty","rationale":"decision reason","evidence_gap":"specific missing evidence or empty"}}'''
+        rejections: list[str] = []
+        for attempt in range(2):
+            correction = "" if attempt == 0 else f" Your previous decision was rejected: {rejections[-1]}. Return one corrected object matching the schema exactly."
+            payload = self.llm.complete_json(system + correction, user)
+            try:
+                decision = self._validated_decision(payload, angles)
+                decision.source = "llm" if attempt == 0 else "llm_retry"
+                decision.rejection_reasons = rejections
+                return decision
+            except ValueError as exc:
+                rejections.append(str(exc))
+        return self._recover_decision(question, angles, evidence, budgets, rejections)
+
+    def _validated_decision(self, payload: dict[str, Any], angles: list[ResearchAngle]) -> AgentDecision:
+        if not isinstance(payload, dict):
+            raise ValueError("Decision must be a JSON object")
+        action = "_".join(str(payload.get("action", "")).strip().lower().replace("-", " ").split())
         if action not in self.ACTIONS:
-            raise ValueError(f"Unsupported agent action: {action or 'missing'}")
-        angle = str(payload.get("angle", ""))
-        if angle and angle not in {item.name for item in angles}:
-            raise ValueError(f"Agent selected unknown research angle: {angle}")
+            raise ValueError("Decision used an unsupported action")
+        raw_angle = " ".join(str(payload.get("angle", "")).split())
+        angle_lookup = {" ".join(item.name.split()).casefold(): item.name for item in angles}
+        angle = angle_lookup.get(raw_angle.casefold(), "") if raw_angle else ""
+        if raw_angle and not angle:
+            raise ValueError("Decision referenced an unknown research angle")
         query = str(payload.get("query", "")).strip()
         if action.startswith("search_") and not query:
-            raise ValueError(f"{action} requires a non-empty query")
-        return AgentDecision(action, str(payload.get("rationale", "")), query, angle, str(payload.get("evidence_gap", "")))
+            raise ValueError("Search decision omitted its query")
+        return AgentDecision(
+            action,
+            str(payload.get("rationale", "")).strip(),
+            query,
+            angle,
+            str(payload.get("evidence_gap", "")).strip(),
+        )
+
+    def _recover_decision(self, question: str, angles: list[ResearchAngle], evidence: list[MarketEvidence], budgets: dict[str, int], rejections: list[str]) -> AgentDecision:
+        angle = angles[0].name if angles else ""
+        can_stop, _ = self._can_stop(evidence)
+        if can_stop:
+            return AgentDecision("stop", "Deterministic recovery stopped because the programmatic evidence threshold was satisfied.", source="deterministic_recovery", rejection_reasons=rejections)
+        if evidence and any(not item.key_claim for item in evidence):
+            return AgentDecision("analyze_evidence", "Deterministic recovery selected analysis for unclassified evidence.", source="deterministic_recovery", rejection_reasons=rejections)
+        if not evidence and budgets.get("search_local", 0) > 0:
+            return AgentDecision("search_local", "Deterministic recovery selected bounded local retrieval because no evidence exists.", question, angle, "No evidence has been retrieved.", "deterministic_recovery", rejections)
+        if budgets.get("search_web", 0) > 0:
+            return AgentDecision("search_web", "Deterministic recovery selected bounded web retrieval for the remaining evidence gap.", question, angle, "Current evidence is insufficient.", "deterministic_recovery", rejections)
+        if budgets.get("search_local", 0) > 0:
+            return AgentDecision("search_local", "Deterministic recovery selected the remaining bounded local retrieval.", question, angle, "Current evidence is insufficient.", "deterministic_recovery", rejections)
+        return AgentDecision(
+            "stop",
+            "Research incomplete: model decisions remained invalid and no safe tool budget remained.",
+            source="deterministic_recovery",
+            rejection_reasons=rejections,
+            incomplete_stop=True,
+        )
 
     @staticmethod
     def _add_local_evidence(results: list[Any], angle: str, evidence: list[MarketEvidence], seen: set[str]) -> int:

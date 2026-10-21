@@ -102,15 +102,111 @@ def test_agent_loop_chooses_tools_from_state_and_stops():
     assert web.calls == ["latest gas pipeline supply"]
 
 
-def test_agent_rejects_invalid_structured_action():
-    class InvalidLLM(AgenticFakeLLM):
+def decision_angles():
+    from rabbithole.market_agent import ResearchAngle
+
+    return [
+        ResearchAngle("Supply", "Are flows falling?", "Supply matters."),
+        ResearchAngle("Demand", "Is demand rising?", "Demand matters."),
+        ResearchAngle("Storage", "Is storage protective?", "Storage matters."),
+    ]
+
+
+class DecisionResponseLLM:
+    def __init__(self, responses):
+        self.responses = list(responses)
+
+    def complete_json(self, system, user):
+        return self.responses.pop(0)
+
+
+@pytest.mark.parametrize(
+    ("payload", "reason"),
+    [
+        ({"action": "run_shell", "rationale": "unsafe"}, "unsupported action"),
+        ({"action": "search_web", "query": "flows", "angle": "Unknown"}, "unknown research angle"),
+        ({"action": "search_local", "query": "", "angle": "Supply"}, "omitted its query"),
+    ],
+)
+def test_invalid_decision_conditions_retry_then_recover(payload, reason):
+    agent = build_agent(llm=DecisionResponseLLM([payload, payload]))
+
+    decision = agent._decide("What drives gas prices?", decision_angles(), [], [], {"search_local": 1, "search_web": 1}, 1)
+
+    assert decision.source == "deterministic_recovery"
+    assert decision.action == "search_local"
+    assert len(decision.rejection_reasons) == 2
+    assert all(reason in rejection for rejection in decision.rejection_reasons)
+
+
+def test_decision_normalizes_casing_whitespace_and_angle():
+    payload = {"action": "  SEARCH-WEB  ", "query": "  latest flows  ", "angle": " supply ", "rationale": " Check recency. "}
+    agent = build_agent(llm=DecisionResponseLLM([payload]))
+
+    decision = agent._decide("What drives gas prices?", decision_angles(), [], [], {"search_local": 1, "search_web": 1}, 1)
+
+    assert decision.source == "llm"
+    assert decision.action == "search_web"
+    assert decision.query == "latest flows"
+    assert decision.angle == "Supply"
+
+
+def test_invalid_decision_successful_retry_remains_model_directed():
+    responses = [
+        {"action": "browse", "rationale": "invalid"},
+        {"action": "search_web", "query": "latest flows", "angle": "Supply", "rationale": "Use current evidence."},
+    ]
+    agent = build_agent(llm=DecisionResponseLLM(responses))
+
+    decision = agent._decide("What drives gas prices?", decision_angles(), [], [], {"search_local": 1, "search_web": 1}, 1)
+
+    assert decision.source == "llm_retry"
+    assert decision.action == "search_web"
+    assert decision.rejection_reasons == ["Decision used an unsupported action"]
+
+
+def test_failed_retry_records_explicit_recovery_trace():
+    class InvalidThenNormalLLM(AgenticFakeLLM):
+        decision_calls = 0
+
         def complete_json(self, system, user):
             if "bounded market research loop" in system.lower():
-                return {"action": "run_shell", "rationale": "unsafe"}
+                self.decision_calls += 1
+                if self.decision_calls <= 2:
+                    return {"action": "run_shell", "rationale": "invalid"}
             return super().complete_json(system, user)
 
-    with pytest.raises(ValueError, match="Unsupported agent action"):
-        build_agent(llm=InvalidLLM()).research("What drives gas prices?")
+    result = build_agent(llm=InvalidThenNormalLLM()).research("What drives gas prices?")
+
+    assert len([event for event in result.trace if event.event_type == "decision_rejected"]) == 2
+    assert any(event.event_type == "decision_recovered" for event in result.trace)
+    recovered = next(event for event in result.trace if event.event_type == "fallback_decision")
+    assert recovered.metadata["source"] == "deterministic_recovery"
+
+
+def test_exhausted_budget_stops_explicitly_incomplete_without_crashing():
+    class AlwaysInvalidLLM(AgenticFakeLLM):
+        def complete_json(self, system, user):
+            lowered = system.lower()
+            if "bounded market research loop" in lowered:
+                return {"action": "run_shell", "rationale": "invalid"}
+            if "write a concise market intelligence brief" in lowered:
+                return {"current_view": "Insufficient evidence.", "conclusions": [], "key_drivers": [], "conflicting_signals": [], "evidence_strength": "LOW", "monitor_next": ["Collect evidence"]}
+            return super().complete_json(system, user)
+
+    class EmptyWeb:
+        def search(self, query, max_results=1):
+            return []
+
+    limits = AgentLimits(max_iterations=4, max_local_searches=1, max_web_searches=1, local_top_k=1, web_results=1, min_evidence=2)
+    agent = MarketRabbitHoleAgent(SemanticRAG([], TinyEncoder()), AlwaysInvalidLLM(), EmptyWeb(), limits=limits)
+
+    result = agent.research("What drives gas prices?")
+
+    assert result.stop_reason == "Research incomplete: model decisions remained invalid and no safe tool budget remained."
+    assert result.iterations == 3
+    stop = next(event for event in result.trace if event.event_type == "research_stopped")
+    assert stop.metadata["incomplete"] is True
 
 
 def test_premature_stop_is_rejected_until_iteration_bound():
