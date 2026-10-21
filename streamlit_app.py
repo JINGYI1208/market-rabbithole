@@ -36,7 +36,7 @@ st.markdown("""
 
 
 def _load_server_secrets() -> None:
-    for name in ("ZHIPUAI_API_KEY", "TAVILY_API_KEY", "ZHIPU_MODEL", "RABBITHOLE_LIVE_ENABLED", "RABBITHOLE_LIVE_PASSWORD"):
+    for name in ("ZHIPUAI_API_KEY", "TAVILY_API_KEY", "ZHIPU_MODEL", "RABBITHOLE_LIVE_ENABLED", "RABBITHOLE_LIVE_PASSWORD", "RABBITHOLE_RETRIEVAL_BACKEND"):
         try:
             value = st.secrets.get(name)
         except Exception:
@@ -154,6 +154,10 @@ else:
         st.stop()
 
     model = st.selectbox("Configured model", CONFIG.models, index=CONFIG.models.index(CONFIG.default_model))
+    if CONFIG.retrieval_backend == "tfidf":
+        st.caption("Local retrieval: low-memory TF-IDF lexical ranking (hosted mode).")
+    else:
+        st.caption("Local retrieval: MiniLM dense embeddings with lexical score fusion.")
     question = st.text_area("Market question", height=120, placeholder="What has changed, what evidence conflicts, and what should be monitored next?")
     upload = st.file_uploader("Optional private source", type=["pdf", "md", "txt"], accept_multiple_files=False)
     if st.button("Start bounded research", type="primary", disabled=not question.strip()):

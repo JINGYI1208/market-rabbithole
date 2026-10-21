@@ -16,7 +16,15 @@ from rabbithole.providers import (
     WebSearchProvider,
     ZhipuStructuredLLM,
 )
-from rabbithole.semantic_rag import LocalChunk, SemanticRAG, SentenceTransformerEncoder, load_local_chunks
+from rabbithole.semantic_rag import (
+    LocalChunk,
+    LocalRetriever,
+    SemanticRAG,
+    SentenceTransformerEncoder,
+    TfidfRetriever,
+    load_local_chunks,
+    resolve_retrieval_backend,
+)
 
 
 @dataclass(slots=True)
@@ -143,7 +151,7 @@ class MarketRabbitHoleAgent:
 
     def __init__(
         self,
-        rag: SemanticRAG,
+        rag: LocalRetriever,
         llm: StructuredLLM,
         web: WebSearchProvider,
         local_top_k: int | None = None,
@@ -177,7 +185,7 @@ class MarketRabbitHoleAgent:
         record("initial_research_plan", f"Created {len(angles)} question-specific research angles", angle_count=len(angles))
         session_rag = self.rag
         if uploaded_chunks:
-            session_rag = SemanticRAG([*self.rag.chunks, *uploaded_chunks], self.rag.encoder)
+            session_rag = self.rag.with_chunks([*self.rag.chunks, *uploaded_chunks])
 
         evidence: list[MarketEvidence] = []
         seen: set[str] = set()
@@ -400,8 +408,13 @@ def build_market_agent(corpus: str | Path, *, model: str | None = None, limits: 
     from dotenv import load_dotenv
 
     load_dotenv()
-    model_name = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
-    rag = SemanticRAG(load_local_chunks(corpus), SentenceTransformerEncoder(model_name))
+    chunks = load_local_chunks(corpus)
+    retrieval_backend = resolve_retrieval_backend()
+    if retrieval_backend == "tfidf":
+        rag: LocalRetriever = TfidfRetriever(chunks)
+    else:
+        model_name = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+        rag = SemanticRAG(chunks, SentenceTransformerEncoder(model_name))
     zhipu_key = os.getenv("ZHIPUAI_API_KEY") or os.getenv("ZHIPU_API_KEY")
     tavily_key = os.getenv("TAVILY_API_KEY")
     llm = ResilientStructuredLLM(ZhipuStructuredLLM(api_key=zhipu_key, model=model) if zhipu_key else None)

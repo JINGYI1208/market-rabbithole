@@ -43,7 +43,7 @@ Conflict detection → cited brief → citation-ID verification
 ## Core capabilities
 
 - **Dynamic research control** — the LLM chooses follow-up actions from actual state; a structured event stream shows decisions, tool calls, gaps, contradictions, verification, and stop reason without exposing chain-of-thought.
-- **Hybrid retrieval** — normalized semantic similarity plus lightweight lexical overlap searches bundled and request-scoped uploaded sources; Tavily provides current web evidence.
+- **Configurable local retrieval** — local development can use normalized MiniLM similarity plus lexical overlap; memory-constrained Render instances use sparse TF-IDF lexical ranking. Both search bundled and request-scoped uploaded sources, while Tavily provides current web evidence.
 - **Evidence reasoning** — each item becomes a grounded claim classified as fact, opinion, or forecast and SUPPORT, CONTRADICT, or NEUTRAL, with time period and assumptions.
 - **Conflict detection** — deterministic logic surfaces opposing analyzed claims and their citation IDs, while distinguishing possible time-period or assumption differences.
 - **Traceable synthesis** — conclusions carry evidence IDs; a programmatic verifier removes nonexistent citations and flags unsupported conclusions. This validates citation existence, not full semantic entailment.
@@ -57,7 +57,7 @@ Conflict detection → cited brief → citation-ID verification
 ```bash
 conda create -n market-rabbithole python=3.12 -y
 conda activate market-rabbithole
-python -m pip install -e '.[test]'
+python -m pip install -e '.[test,semantic]'
 cp .env.example .env
 streamlit run streamlit_app.py
 ```
@@ -69,6 +69,7 @@ ZHIPUAI_API_KEY=your_zhipu_api_key
 TAVILY_API_KEY=your_tavily_api_key
 ZHIPU_MODEL=glm-4-flash
 RABBITHOLE_LIVE_ENABLED=1
+RABBITHOLE_RETRIEVAL_BACKEND=auto
 ```
 
 Never commit `.env` or `.streamlit/secrets.toml`. Uploaded files stay in memory for that request and are not added to the bundled index. Relevant excerpts are sent to the configured LLM, so users should only upload material they are permitted to share with that provider.
@@ -85,7 +86,7 @@ Python 3.12 · Streamlit · `sentence-transformers/all-MiniLM-L6-v2` · NumPy ·
 
 - Source documents: request-scoped PDF/Markdown/text plus a small bundled fallback corpus.
 - Chunking: independently implemented, sentence-aware overlapping windows with source metadata.
-- Retrieval: in-memory dense embeddings with configurable lexical-score fusion; no vector database is required for the prototype corpus.
+- Retrieval: `auto` selects sparse TF-IDF lexical ranking on Render and MiniLM dense embeddings with lexical-score fusion locally. Set `RABBITHOLE_RETRIEVAL_BACKEND=tfidf` or `sentence-transformers` to choose explicitly.
 - Providers: structured JSON calls with deterministic, sanitized fallback behavior.
 - State: request-local Python objects; no accounts, database, or persistent upload storage.
 

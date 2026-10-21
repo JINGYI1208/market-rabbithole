@@ -1,9 +1,12 @@
-"""Lightweight semantic retrieval for local TXT, Markdown, and PDF sources."""
+"""Local retrieval for TXT, Markdown, and PDF sources."""
 
 from __future__ import annotations
 
 from io import BytesIO
+from collections import Counter
 from dataclasses import dataclass, field
+import math
+import os
 from pathlib import Path
 import re
 from typing import Protocol
@@ -31,6 +34,17 @@ class LocalSearchResult:
 class Encoder(Protocol):
     def encode(self, texts: list[str]) -> np.ndarray:
         """Return L2-normalized embeddings."""
+
+
+class LocalRetriever(Protocol):
+    chunks: list[LocalChunk]
+    backend_name: str
+
+    def search(self, query: str, top_k: int = 3, keyword_weight: float = 0.2) -> list[LocalSearchResult]:
+        """Return ranked local chunks."""
+
+    def with_chunks(self, chunks: list[LocalChunk]) -> "LocalRetriever":
+        """Create an isolated request index over the supplied chunks."""
 
 
 class SentenceTransformerEncoder:
@@ -161,7 +175,11 @@ class SemanticRAG:
     def __init__(self, chunks: list[LocalChunk], encoder: Encoder) -> None:
         self.chunks = chunks
         self.encoder = encoder
+        self.backend_name = "sentence-transformers hybrid"
         self.embeddings = encoder.encode([chunk.text for chunk in chunks]) if chunks else np.empty((0, 0), dtype=np.float32)
+
+    def with_chunks(self, chunks: list[LocalChunk]) -> "SemanticRAG":
+        return SemanticRAG(chunks, self.encoder)
 
     def search(self, query: str, top_k: int = 3, keyword_weight: float = 0.2) -> list[LocalSearchResult]:
         if not self.chunks:
@@ -189,5 +207,65 @@ class SemanticRAG:
         ]
 
 
+class TfidfRetriever:
+    """Sparse lexical TF-IDF retrieval without Transformers or PyTorch."""
+
+    backend_name = "TF-IDF lexical"
+
+    def __init__(self, chunks: list[LocalChunk]) -> None:
+        self.chunks = chunks
+        term_counts = [Counter(_term_list(chunk.text)) for chunk in chunks]
+        document_frequency = Counter(term for counts in term_counts for term in counts)
+        document_count = len(chunks)
+        self.idf = {
+            term: math.log((1 + document_count) / (1 + frequency)) + 1.0
+            for term, frequency in document_frequency.items()
+        }
+        self.vectors = [self._vector(counts) for counts in term_counts]
+
+    def with_chunks(self, chunks: list[LocalChunk]) -> "TfidfRetriever":
+        return TfidfRetriever(chunks)
+
+    def search(self, query: str, top_k: int = 3, keyword_weight: float = 0.2) -> list[LocalSearchResult]:
+        if not self.chunks or top_k < 1:
+            return []
+        query_vector = self._vector(Counter(_term_list(query)))
+        if not query_vector:
+            return []
+        scores = [sum(weight * document.get(term, 0.0) for term, weight in query_vector.items()) for document in self.vectors]
+        indices = sorted(range(len(scores)), key=lambda index: scores[index], reverse=True)[:top_k]
+        return [
+            LocalSearchResult(self.chunks[index], scores[index], semantic_score=0.0, keyword_score=scores[index])
+            for index in indices
+            if scores[index] > 0
+        ]
+
+    def _vector(self, counts: Counter[str]) -> dict[str, float]:
+        weighted = {
+            term: (1.0 + math.log(count)) * self.idf[term]
+            for term, count in counts.items()
+            if term in self.idf and count > 0
+        }
+        norm = math.sqrt(sum(value * value for value in weighted.values()))
+        return {term: value / norm for term, value in weighted.items()} if norm else {}
+
+
+def resolve_retrieval_backend(value: str | None = None) -> str:
+    """Resolve an explicit backend or choose the low-memory backend on Render."""
+    selected = (value or os.getenv("RABBITHOLE_RETRIEVAL_BACKEND", "auto")).strip().lower()
+    aliases = {"semantic": "sentence-transformers", "dense": "sentence-transformers", "lexical": "tfidf"}
+    selected = aliases.get(selected, selected)
+    if selected == "auto":
+        render_hosted = os.getenv("RENDER", "").strip().lower() in {"1", "true", "yes", "on"}
+        return "tfidf" if render_hosted else "sentence-transformers"
+    if selected not in {"tfidf", "sentence-transformers"}:
+        raise ValueError("RABBITHOLE_RETRIEVAL_BACKEND must be auto, tfidf, or sentence-transformers")
+    return selected
+
+
 def _terms(text: str) -> set[str]:
-    return {term for term in re.findall(r"[a-z0-9]+", text.lower()) if len(term) > 1}
+    return set(_term_list(text))
+
+
+def _term_list(text: str) -> list[str]:
+    return [term for term in re.findall(r"[a-z0-9]+", text.lower()) if len(term) > 1]

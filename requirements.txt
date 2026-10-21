@@ -1,6 +1,5 @@
 numpy>=1.26
 pypdf>=4.0
 python-dotenv>=1.0
-sentence-transformers>=3.0
 streamlit>=1.39,<2
 zhipuai>=2.1

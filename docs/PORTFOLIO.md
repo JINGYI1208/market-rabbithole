@@ -7,7 +7,7 @@ Market RabbitHole is a bounded market-research agent, not a generic chatbot. A u
 ## Résumé bullets
 
 - Built a bounded single-agent market-intelligence workflow that dynamically selects local RAG, Tavily web search, evidence analysis, or stopping based on evidence gaps and remaining tool budgets.
-- Implemented request-scoped PDF/Markdown/text retrieval using MiniLM embeddings plus lexical score fusion, with structured fact/opinion/forecast classification and deterministic contradiction detection.
+- Implemented request-scoped PDF/Markdown/text retrieval with a local MiniLM hybrid mode and a low-memory hosted TF-IDF lexical mode, plus structured fact/opinion/forecast classification and deterministic contradiction detection.
 - Designed traceable synthesis with claim-level citation IDs, programmatic reference validation, reproducible zero-API demo fixtures, mocked provider tests, and Streamlit deployment controls.
 
 ## Honest design trade-offs

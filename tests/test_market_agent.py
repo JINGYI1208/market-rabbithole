@@ -3,9 +3,9 @@ import json
 import numpy as np
 import pytest
 
-from rabbithole.market_agent import AgentLimits, MarketRabbitHoleAgent
+from rabbithole.market_agent import AgentLimits, MarketRabbitHoleAgent, build_market_agent
 from rabbithole.providers import ResilientStructuredLLM, ResilientWebSearchProvider
-from rabbithole.semantic_rag import LocalChunk, SemanticRAG, load_uploaded_chunks
+from rabbithole.semantic_rag import LocalChunk, SemanticRAG, TfidfRetriever, load_uploaded_chunks, resolve_retrieval_backend
 
 
 class TinyEncoder:
@@ -140,6 +140,41 @@ def test_semantic_rag_hybrid_search_uses_keyword_signal():
     assert results[0].keyword_score > 0
 
 
+def test_tfidf_retriever_is_lexical_and_handles_empty_corpus():
+    chunks = [
+        LocalChunk("copper", "Copper", "Copper mine supply disruptions tighten concentrate markets.", "copper.md"),
+        LocalChunk("rates", "Rates", "Treasury yields respond to monetary policy.", "rates.md"),
+    ]
+    retriever = TfidfRetriever(chunks)
+
+    assert retriever.backend_name == "TF-IDF lexical"
+    assert retriever.search("copper supply", top_k=1)[0].chunk.id == "copper"
+    assert retriever.search("unseen-vocabulary") == []
+    assert TfidfRetriever([]).search("anything") == []
+
+
+def test_retrieval_backend_auto_uses_tfidf_on_render(monkeypatch):
+    monkeypatch.delenv("RABBITHOLE_RETRIEVAL_BACKEND", raising=False)
+    monkeypatch.setenv("RENDER", "true")
+    assert resolve_retrieval_backend() == "tfidf"
+
+
+def test_build_agent_tfidf_mode_does_not_initialize_transformer(monkeypatch, tmp_path):
+    (tmp_path / "note.md").write_text("Copper supply is constrained.", encoding="utf-8")
+    monkeypatch.setenv("RABBITHOLE_RETRIEVAL_BACKEND", "tfidf")
+    monkeypatch.setenv("ZHIPUAI_API_KEY", "")
+    monkeypatch.setenv("ZHIPU_API_KEY", "")
+    monkeypatch.setenv("TAVILY_API_KEY", "")
+
+    def fail_if_loaded(*args, **kwargs):
+        raise AssertionError("Sentence Transformers must not load in TF-IDF mode")
+
+    monkeypatch.setattr("rabbithole.market_agent.SentenceTransformerEncoder", fail_if_loaded)
+    agent = build_market_agent(tmp_path)
+
+    assert isinstance(agent.rag, TfidfRetriever)
+
+
 def test_uploaded_text_enters_only_the_research_session():
     base = [LocalChunk("storage", "Storage", "Gas storage remains high.", "storage.md")]
     uploaded = load_uploaded_chunks([("private_supply.md", b"Private pipeline supply data shows falling flows.")])
@@ -148,6 +183,18 @@ def test_uploaded_text_enters_only_the_research_session():
 
     assert any(item.source == "private_supply.md" for item in result.evidence)
     assert all(chunk.path != "private_supply.md" for chunk in agent.rag.chunks)
+
+
+def test_uploaded_text_is_retrievable_in_tfidf_agent_loop():
+    base = [LocalChunk("storage", "Storage", "Gas storage remains high.", "storage.md")]
+    uploaded = load_uploaded_chunks([("private_supply.txt", b"Private pipeline supply data shows falling flows.")])
+    limits = AgentLimits(max_iterations=8, max_local_searches=3, max_web_searches=3, local_top_k=1, web_results=1, min_evidence=2)
+    agent = MarketRabbitHoleAgent(TfidfRetriever(base), AgenticFakeLLM(), FakeWeb(), limits=limits)
+
+    result = agent.research("Why is pipeline supply falling?", uploaded)
+
+    assert any(item.source == "private_supply.txt" for item in result.evidence)
+    assert all(chunk.path != "private_supply.txt" for chunk in agent.rag.chunks)
 
 
 def test_uploaded_text_chunking_preserves_overlap_and_metadata():

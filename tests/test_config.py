@@ -6,9 +6,12 @@ from rabbithole.config import load_app_config
 def test_live_mode_is_disabled_by_default(monkeypatch):
     monkeypatch.delenv("RABBITHOLE_LIVE_ENABLED", raising=False)
     monkeypatch.delenv("RABBITHOLE_MODELS", raising=False)
+    monkeypatch.delenv("RABBITHOLE_RETRIEVAL_BACKEND", raising=False)
+    monkeypatch.delenv("RENDER", raising=False)
     config = load_app_config()
     assert config.live_agent_enabled is False
     assert config.models == ("glm-4-flash",)
+    assert config.retrieval_backend == "sentence-transformers"
 
 
 def test_server_limits_reject_unsafe_values(monkeypatch):
@@ -23,3 +26,9 @@ def test_model_allowlist_controls_default(monkeypatch):
     config = load_app_config()
     assert config.models == ("glm-4-flash", "glm-4-air")
     assert config.default_model == "glm-4-flash"
+
+
+def test_render_defaults_to_low_memory_retrieval(monkeypatch):
+    monkeypatch.delenv("RABBITHOLE_RETRIEVAL_BACKEND", raising=False)
+    monkeypatch.setenv("RENDER", "true")
+    assert load_app_config().retrieval_backend == "tfidf"

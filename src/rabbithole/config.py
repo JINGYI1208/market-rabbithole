@@ -6,6 +6,7 @@ import os
 from dataclasses import dataclass
 
 from rabbithole.market_agent import AgentLimits
+from rabbithole.semantic_rag import resolve_retrieval_backend
 
 
 def _positive_int(name: str, default: int, maximum: int) -> int:
@@ -31,6 +32,7 @@ class AppConfig:
     default_model: str
     max_upload_mb: int
     max_concurrency: int
+    retrieval_backend: str
     limits: AgentLimits
 
 
@@ -57,5 +59,6 @@ def load_app_config() -> AppConfig:
         default_model=default_model,
         max_upload_mb=_positive_int("RABBITHOLE_MAX_UPLOAD_MB", 5, 15),
         max_concurrency=_positive_int("RABBITHOLE_MAX_CONCURRENCY", 1, 4),
+        retrieval_backend=resolve_retrieval_backend(),
         limits=limits,
     )

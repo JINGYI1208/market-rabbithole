@@ -29,7 +29,12 @@ If the hard iteration limit is reached, the stop reason remains explicit and the
 
 ## Retrieval and upload isolation
 
-Documents become sentence-aware overlapping chunks with stable source metadata. MiniLM produces normalized dense vectors. Retrieval min-max normalizes the dense score and combines it with token overlap; the default keyword weight is 0.2. This is a pragmatic hybrid ranker, not BM25 and not a production vector database.
+Documents become sentence-aware overlapping chunks with stable source metadata. Retrieval has two small-corpus backends:
+
+- `sentence-transformers`: MiniLM normalized dense vectors combined with token overlap. This remains the local default.
+- `tfidf`: sparse lexical TF-IDF cosine ranking implemented without Transformers or PyTorch. `auto` selects this backend when Render's `RENDER` environment flag is present.
+
+TF-IDF is deliberately described as lexical retrieval, not semantic retrieval. Neither backend is a production vector database.
 
 Bundled chunks form the reusable base index. Uploaded PDF/MD/TXT chunks are combined into a request-local `SemanticRAG` instance. They are not written to disk, placed in a database, or appended to the base index.
 
@@ -54,4 +59,4 @@ GLM synthesis must attach evidence IDs to each conclusion. The verifier removes 
 
 ## Trade-offs
 
-A single bounded agent is easier to inspect and evaluate than a multi-agent conversation, but it concentrates planning quality in one model. In-memory NumPy retrieval keeps the demo deployable but will not scale to a large research library. Deterministic conflict and citation checks are explainable, but deliberately narrower than semantic fact checking.
+A single bounded agent is easier to inspect and evaluate than a multi-agent conversation, but it concentrates planning quality in one model. The low-memory TF-IDF backend improves deployability at the cost of synonym and paraphrase recall. Both in-memory backends are intended for small corpora. Deterministic conflict and citation checks are explainable, but deliberately narrower than semantic fact checking.
