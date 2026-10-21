@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from rabbithole.config import load_app_config  # noqa: E402
 from rabbithole.market_agent import AgentLimits, build_market_agent  # noqa: E402
+from rabbithole.providers import log_safe_exception  # noqa: E402
 from rabbithole.semantic_rag import load_uploaded_chunks  # noqa: E402
 
 
@@ -179,14 +180,19 @@ else:
             observed.append(f"{event.step}: {event.detail}")
             event_box.markdown("\n\n".join(f"- {line}" for line in observed[-8:]))
 
+        stage = "initialize retrieval and providers"
         try:
             limits_json = json.dumps({name: getattr(CONFIG.limits, name) for name in CONFIG.limits.__dataclass_fields__})
             agent = cached_agent(model, limits_json)
+            stage = "parse request-scoped uploads"
             chunks = load_uploaded_chunks(payloads) if payloads else []
+            stage = "run bounded research agent"
             result = agent.research(question, chunks, on_event=show_event)
+            stage = "render research result"
             status.update(label="Research complete", state="complete", expanded=False)
             render_research(result.to_dict())
         except Exception as exc:
+            log_safe_exception("LiveAgent", stage, exc)
             status.update(label="Research failed safely", state="error")
             st.error(f"Live research could not complete: {type(exc).__name__}. Check provider configuration or rate limits.")
         finally:

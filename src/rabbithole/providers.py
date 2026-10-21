@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sys
+import traceback
 import urllib.request
 from typing import Any, Protocol
 
@@ -47,7 +48,7 @@ class ZhipuStructuredLLM:
             )
             return _parse_json(response.choices[0].message.content)
         except Exception as exc:
-            _development_log("Zhipu", exc, secret=self.api_key, context=f"model={self.model}")
+            _development_log("Zhipu", exc, secret=self.api_key, context=f"{_llm_stage(system)} model={self.model}")
             raise ProviderError("Zhipu reasoning request failed.") from exc
 
 
@@ -178,8 +179,8 @@ class ResilientWebSearchProvider:
         if self.primary is not None:
             try:
                 return self.primary.search(query, max_results)
-            except Exception:
-                pass
+            except Exception as exc:
+                log_safe_exception("Tavily", "live web search", exc)
         warning = "Live web research unavailable — brief uses local evidence only."
         if warning not in self._warnings:
             self._warnings.append(warning)
@@ -236,21 +237,26 @@ def _llm_stage(system: str) -> str:
 
 
 def _development_log(provider: str, exc: Exception, *, secret: str = "", context: str = "") -> None:
-    """Print a concise, secret-redacted provider error only in development mode."""
+    """Print safe provider diagnostics only in development mode."""
     if os.getenv("RABBITHOLE_DEBUG", "").lower() not in {"1", "true", "yes", "on"}:
         return
-    status = getattr(exc, "status_code", None)
-    code = getattr(exc, "code", None)
-    message = str(getattr(exc, "message", exc))
-    if secret:
-        message = message.replace(secret, "[REDACTED]")
-    message = re.sub(r"(?i)(authorization\s*[:=]\s*bearer\s+)[^\s,}\]]+", r"\1[REDACTED]", message)
-    message = re.sub(r"(?i)(api[_-]?key\s*[:=]\s*)[^\s,}\]]+", r"\1[REDACTED]", message)
-    fields = [f"type={type(exc).__name__}"]
+    log_safe_exception(provider, context or "provider request", exc, debug_label=True)
+
+
+def log_safe_exception(component: str, stage: str, exc: Exception, *, debug_label: bool = False) -> None:
+    """Log operational diagnostics without exception text, prompts, or request data."""
+    root = exc
+    while root.__cause__ is not None:
+        root = root.__cause__
+    status = getattr(root, "status_code", None) or getattr(root, "status", None) or getattr(root, "code", None)
+    frames = traceback.extract_tb(root.__traceback__ or exc.__traceback__)
+    locations = [f"{os.path.basename(frame.filename)}:{frame.lineno}:{frame.name}" for frame in frames[-3:]]
+    label = "debug" if debug_label else "error"
+    fields = [f"component={component}", f"stage={stage}", f"type={type(root).__name__}"]
     if status is not None:
         fields.append(f"status={status}")
-    if code is not None:
-        fields.append(f"code={code}")
-    if context:
-        fields.append(context)
-    print(f"[{provider} debug] {' '.join(fields)} message={message[:600]}", file=sys.stderr, flush=True)
+    if locations:
+        fields.append(f"location={' <- '.join(locations)}")
+    if isinstance(exc, ProviderError):
+        fields.append(f"message={str(exc)}")
+    print(f"[MarketRabbitHole {label}] {' '.join(fields)}", file=sys.stderr, flush=True)
