@@ -23,11 +23,14 @@ models/
 *.safetensors
 *.log
 .DS_Store
+tmp/
+uploads/
 
 # Local secrets
 .env
 .env.local
 .env.*.local
+.streamlit/secrets.toml
 
 # Local portfolio notes
 docs/INTERVIEW_PLAYBOOK.md

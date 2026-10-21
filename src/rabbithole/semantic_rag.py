@@ -5,6 +5,7 @@ from __future__ import annotations
 from io import BytesIO
 from dataclasses import dataclass, field
 from pathlib import Path
+import re
 from typing import Protocol
 
 import numpy as np
@@ -23,6 +24,8 @@ class LocalChunk:
 class LocalSearchResult:
     chunk: LocalChunk
     score: float
+    semantic_score: float = 0.0
+    keyword_score: float = 0.0
 
 
 class Encoder(Protocol):
@@ -153,17 +156,38 @@ def _read_sections(path: Path) -> list[tuple[str, str]]:
 
 
 class SemanticRAG:
-    """In-memory cosine index over normalized sentence-transformer embeddings."""
+    """In-memory hybrid index over dense embeddings and lexical overlap."""
 
     def __init__(self, chunks: list[LocalChunk], encoder: Encoder) -> None:
         self.chunks = chunks
         self.encoder = encoder
         self.embeddings = encoder.encode([chunk.text for chunk in chunks]) if chunks else np.empty((0, 0), dtype=np.float32)
 
-    def search(self, query: str, top_k: int = 3) -> list[LocalSearchResult]:
+    def search(self, query: str, top_k: int = 3, keyword_weight: float = 0.2) -> list[LocalSearchResult]:
         if not self.chunks:
             return []
+        if not 0.0 <= keyword_weight <= 1.0:
+            raise ValueError("keyword_weight must be between 0 and 1")
         query_vector = self.encoder.encode([query])[0]
-        scores = self.embeddings @ query_vector
+        semantic_scores = self.embeddings @ query_vector
+        query_terms = _terms(query)
+        keyword_scores = np.asarray([
+            len(query_terms & _terms(chunk.text)) / max(1, len(query_terms))
+            for chunk in self.chunks
+        ], dtype=np.float32)
+        scores = (1.0 - keyword_weight) * semantic_scores + keyword_weight * keyword_scores
         indices = np.argsort(scores)[::-1][:top_k]
-        return [LocalSearchResult(self.chunks[int(index)], float(scores[int(index)])) for index in indices if scores[int(index)] > 0]
+        return [
+            LocalSearchResult(
+                self.chunks[int(index)],
+                float(scores[int(index)]),
+                float(semantic_scores[int(index)]),
+                float(keyword_scores[int(index)]),
+            )
+            for index in indices
+            if scores[int(index)] > 0
+        ]
+
+
+def _terms(text: str) -> set[str]:
+    return {term for term in re.findall(r"[a-z0-9]+", text.lower()) if len(term) > 1}

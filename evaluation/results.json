@@ -1,0 +1,8 @@
+{
+  "dataset": "deterministic synthetic retrieval fixture",
+  "case_count": 4,
+  "metric": "Recall@1",
+  "semantic_only": 1.0,
+  "hybrid_20_percent_keyword": 1.0,
+  "limitations": "This tiny fixture verifies behavior; it is not evidence of production-quality improvement."
+}

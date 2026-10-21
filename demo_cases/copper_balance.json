@@ -1,0 +1,465 @@
+{
+  "title": "Copper supply and demand balance",
+  "description": "Examines structural electrification demand against near-term inventory and macro risks.",
+  "fixture_based": true,
+  "generated_by": "scripts/generate_demo_fixtures.py",
+  "result": {
+    "question": "Is the copper market entering a durable deficit, and which evidence could invalidate that view?",
+    "angles": [
+      {
+        "name": "Fundamentals vs expectations",
+        "question": "What evidence supports or challenges the base case?",
+        "rationale": "Separates operating evidence from expectations."
+      },
+      {
+        "name": "Timing and assumptions",
+        "question": "Which horizon and assumptions drive disagreement?",
+        "rationale": "Prevents false contradictions."
+      },
+      {
+        "name": "Invalidation risk",
+        "question": "What would invalidate the current view?",
+        "rationale": "Defines monitoring conditions."
+      }
+    ],
+    "evidence": [
+      {
+        "id": "local:copper_balance-1",
+        "source_type": "LOCAL",
+        "title": "Copper supply and demand balance",
+        "source": "private",
+        "locator": "fixture://copper_balance/private",
+        "date": "",
+        "excerpt": "Grid investment and electrification forecasts support structural copper demand, subject to project execution.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "L1",
+        "stance": "SUPPORT",
+        "key_claim": "Grid investment and electrification forecasts support structural copper demand, subject to project execution.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FORECAST",
+        "time_period": "current or forward",
+        "assumptions": [
+          "Other market drivers remain broadly stable"
+        ],
+        "relevance": 0.349
+      },
+      {
+        "id": "local:copper_balance-2",
+        "source_type": "LOCAL",
+        "title": "Copper supply and demand balance",
+        "source": "private",
+        "locator": "fixture://copper_balance/private",
+        "date": "",
+        "excerpt": "However, visible inventories and weak construction demand can soften the near-term balance.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "L2",
+        "stance": "CONTRADICT",
+        "key_claim": "However, visible inventories and weak construction demand can soften the near-term balance.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FACT",
+        "time_period": "current or forward",
+        "assumptions": [],
+        "relevance": 0.305
+      },
+      {
+        "id": "local:copper_balance-0",
+        "source_type": "LOCAL",
+        "title": "Copper supply and demand balance",
+        "source": "private",
+        "locator": "fixture://copper_balance/private",
+        "date": "",
+        "excerpt": "Mine disruptions and declining ore grades constrain medium-term copper supply growth.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "L3",
+        "stance": "SUPPORT",
+        "key_claim": "Mine disruptions and declining ore grades constrain medium-term copper supply growth.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FACT",
+        "time_period": "current or forward",
+        "assumptions": [],
+        "relevance": 0.2
+      },
+      {
+        "id": "web:https://example.com/copper_balance/1",
+        "source_type": "WEB",
+        "title": "Fixture public source 1",
+        "source": "example.com",
+        "locator": "https://example.com/copper_balance/1",
+        "date": "2026-10-01",
+        "excerpt": "Current exchange inventory data show a larger buffer than the structural deficit narrative implies.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "W1",
+        "stance": "CONTRADICT",
+        "key_claim": "Current exchange inventory data show a larger buffer than the structural deficit narrative implies.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FACT",
+        "time_period": "current or forward",
+        "assumptions": [],
+        "relevance": null
+      },
+      {
+        "id": "web:https://example.com/copper_balance/2",
+        "source_type": "WEB",
+        "title": "Fixture public source 2",
+        "source": "example.com",
+        "locator": "https://example.com/copper_balance/2",
+        "date": "2026-10-01",
+        "excerpt": "New mine approvals could improve future supply, but commissioning schedules remain uncertain forecasts.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "W2",
+        "stance": "SUPPORT",
+        "key_claim": "New mine approvals could improve future supply, but commissioning schedules remain uncertain forecasts.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FORECAST",
+        "time_period": "current or forward",
+        "assumptions": [
+          "Other market drivers remain broadly stable"
+        ],
+        "relevance": null
+      }
+    ],
+    "conflicts": [
+      {
+        "angle": "Fundamentals vs expectations",
+        "support": [
+          "Grid investment and electrification forecasts support structural copper demand, subject to project execution.",
+          "Mine disruptions and declining ore grades constrain medium-term copper supply growth."
+        ],
+        "contradict": [
+          "However, visible inventories and weak construction demand can soften the near-term balance.",
+          "Current exchange inventory data show a larger buffer than the structural deficit narrative implies."
+        ],
+        "support_citations": [
+          "L1",
+          "L3"
+        ],
+        "contradict_citations": [
+          "L2",
+          "W1"
+        ],
+        "explanation": "Opposing claims may reflect different assumptions."
+      }
+    ],
+    "brief": {
+      "current_view": "Grid investment and electrification forecasts support structural copper demand, subject to project execution. [L1] However, visible inventories and weak construction demand can soften the near-term balance. [L2]",
+      "key_drivers": [
+        "↔ Grid investment and electrification forecasts support structural copper demand, subject to project execution. [L1]",
+        "↔ However, visible inventories and weak construction demand can soften the near-term balance. [L2]",
+        "↔ Mine disruptions and declining ore grades constrain medium-term copper supply growth. [L3]"
+      ],
+      "conflicting_signals": [
+        "Supporting and opposing evidence coexist; timing and assumptions remain unresolved."
+      ],
+      "evidence_strength": "MEDIUM",
+      "monitor_next": [
+        "Updated company guidance",
+        "Inventory or order data",
+        "Evidence that resolves the stated assumptions"
+      ],
+      "conclusions": [
+        {
+          "statement": "Grid investment and electrification forecasts support structural copper demand, subject to project execution.",
+          "citations": [
+            "L1"
+          ],
+          "uncertainty": "The conclusion depends on the stated horizon.",
+          "citation_verified": true
+        },
+        {
+          "statement": "However, visible inventories and weak construction demand can soften the near-term balance.",
+          "citations": [
+            "L2"
+          ],
+          "uncertainty": "The opposing signal may use different assumptions.",
+          "citation_verified": true
+        }
+      ],
+      "unsupported_claims": []
+    },
+    "trace": [
+      {
+        "event_type": "initial_research_plan",
+        "detail": "Created 3 question-specific research angles",
+        "iteration": 0,
+        "tool": "",
+        "status": "ok",
+        "metadata": {
+          "angle_count": 3
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Establish the private research baseline.",
+        "iteration": 1,
+        "tool": "search_local",
+        "status": "ok",
+        "metadata": {
+          "action": "search_local",
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "evidence_gap_detected",
+        "detail": "No private evidence has been examined.",
+        "iteration": 1,
+        "tool": "search_local",
+        "status": "ok",
+        "metadata": {
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected private/local retrieval",
+        "iteration": 1,
+        "tool": "search_local",
+        "status": "ok",
+        "metadata": {
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "search_performed",
+        "detail": "Local retrieval added 3 new evidence items",
+        "iteration": 1,
+        "tool": "search_local",
+        "status": "ok",
+        "metadata": {
+          "result_count": 3
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Classify newly retrieved evidence before deciding what is missing.",
+        "iteration": 2,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "action": "analyze_evidence",
+          "angle": ""
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected structured evidence analysis",
+        "iteration": 2,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {}
+      },
+      {
+        "event_type": "evidence_analyzed",
+        "detail": "Analyzed 3 evidence items",
+        "iteration": 2,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "evidence_count": 3
+        }
+      },
+      {
+        "event_type": "contradiction_found",
+        "detail": "Found 1 research angles with opposing evidence",
+        "iteration": 2,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "conflict_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Test private context against current public evidence.",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "action": "search_web",
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "evidence_gap_detected",
+        "detail": "The private view lacks current public confirmation.",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected live web research",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "search_performed",
+        "detail": "Web research added 1 new evidence items",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "result_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Classify newly retrieved evidence before deciding what is missing.",
+        "iteration": 4,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "action": "analyze_evidence",
+          "angle": ""
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected structured evidence analysis",
+        "iteration": 4,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {}
+      },
+      {
+        "event_type": "evidence_analyzed",
+        "detail": "Analyzed 4 evidence items",
+        "iteration": 4,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "evidence_count": 4
+        }
+      },
+      {
+        "event_type": "contradiction_found",
+        "detail": "Found 1 research angles with opposing evidence",
+        "iteration": 4,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "conflict_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Investigate the detected contradiction before stopping.",
+        "iteration": 5,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "action": "search_web",
+          "angle": "Timing and assumptions"
+        }
+      },
+      {
+        "event_type": "evidence_gap_detected",
+        "detail": "The conflict may reflect different periods or assumptions.",
+        "iteration": 5,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "angle": "Timing and assumptions"
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected live web research",
+        "iteration": 5,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "angle": "Timing and assumptions"
+        }
+      },
+      {
+        "event_type": "search_performed",
+        "detail": "Web research added 1 new evidence items",
+        "iteration": 5,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "result_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Classify newly retrieved evidence before deciding what is missing.",
+        "iteration": 6,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "action": "analyze_evidence",
+          "angle": ""
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected structured evidence analysis",
+        "iteration": 6,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {}
+      },
+      {
+        "event_type": "evidence_analyzed",
+        "detail": "Analyzed 5 evidence items",
+        "iteration": 6,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "evidence_count": 5
+        }
+      },
+      {
+        "event_type": "contradiction_found",
+        "detail": "Found 1 research angles with opposing evidence",
+        "iteration": 6,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "conflict_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "The evidence is analyzed, the contradiction is explicit, and the follow-up budget has been used selectively.",
+        "iteration": 7,
+        "tool": "stop",
+        "status": "ok",
+        "metadata": {
+          "action": "stop",
+          "angle": ""
+        }
+      },
+      {
+        "event_type": "research_stopped",
+        "detail": "The evidence is analyzed, the contradiction is explicit, and the follow-up budget has been used selectively.",
+        "iteration": 7,
+        "tool": "stop",
+        "status": "ok",
+        "metadata": {}
+      },
+      {
+        "event_type": "citation_verification_completed",
+        "detail": "Verified 2 cited conclusions; 0 lacked valid evidence links",
+        "iteration": 7,
+        "tool": "citation_verifier",
+        "status": "ok",
+        "metadata": {
+          "verified": 2,
+          "unsupported": 0
+        }
+      }
+    ],
+    "warnings": [],
+    "stop_reason": "The evidence is analyzed, the contradiction is explicit, and the follow-up budget has been used selectively.",
+    "iterations": 7
+  }
+}

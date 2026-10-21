@@ -91,27 +91,49 @@ class FallbackStructuredLLM:
     """Understandable local fallback used only when Zhipu is unavailable."""
 
     def complete_json(self, system: str, user: str) -> dict[str, Any]:
-        if "planner" in system.lower():
+        lowered = system.lower()
+        if "initial plan" in lowered or "planner" in lowered:
             question = _between(user, "Question: ", "\nReturn:")
             return {"angles": [
                 {"name": "Core drivers", "question": f"What supply, demand, or competitive forces explain: {question}", "rationale": "Tests the main market mechanism."},
                 {"name": "Counter-signals", "question": f"What evidence complicates or challenges: {question}", "rationale": "Prevents a one-sided interpretation."},
                 {"name": "Market context", "question": f"What timing, policy, or macro context matters for: {question}", "rationale": "Places the evidence in its relevant horizon."},
             ]}
-        if "analyze market evidence" in system.lower():
+        if "bounded market research loop" in lowered:
+            question = _between(user, "Question: ", "\nResearch state:")
+            state = json.loads(_between(user, "Research state: ", "\nReturn:"))
+            evidence = state.get("evidence", [])
+            angle = state["angles"][0]["name"] if state.get("angles") else "Core drivers"
+            budget = state.get("remaining_budget", {})
+            if not evidence and budget.get("search_local", 0):
+                return {"action": "search_local", "query": question, "angle": angle, "rationale": "Start with available private context.", "evidence_gap": "No evidence has been retrieved."}
+            if any(not item.get("claim") for item in evidence):
+                return {"action": "analyze_evidence", "query": "", "angle": "", "rationale": "New evidence requires classification.", "evidence_gap": ""}
+            if len(evidence) < state.get("minimum_evidence", 3) and budget.get("search_web", 0):
+                return {"action": "search_web", "query": question, "angle": angle, "rationale": "Add current public evidence.", "evidence_gap": "Current evidence is below the minimum threshold."}
+            return {"action": "stop", "query": "", "angle": "", "rationale": "Available evidence is analyzed and bounded research can stop.", "evidence_gap": ""}
+        if "analyze market evidence" in lowered:
             rows = json.loads(_between(user, "Evidence: ", "\nReturn:"))
             return {"evidence": [{
                 "id": item["id"],
                 "research_angle": item["angle"],
                 "stance": "NEUTRAL",
+                "kind": "FACT",
                 "key_claim": _first_sentence(item.get("excerpt", "")),
                 "explanation": "Retrieved evidence; GLM classification was unavailable.",
+                "time_period": "unknown",
+                "assumptions": [],
             } for item in rows]}
         rows = json.loads(_between(user, "Evidence: ", "\nDetected conflicts:"))
         claims = [f"{item.get('claim', '')} [{item.get('citation', '')}]".strip() for item in rows if item.get("claim")]
         summary = " ".join(claims[:3]) or "Local retrieval returned no usable evidence."
         return {
             "current_view": summary,
+            "conclusions": [
+                {"statement": item.get("claim", ""), "citations": [item.get("citation", "")], "uncertainty": "GLM synthesis was unavailable."}
+                for item in rows[:3]
+                if item.get("claim") and item.get("citation")
+            ],
             "key_drivers": claims[:5],
             "conflicting_signals": ["GLM synthesis was unavailable; evidence has not been fully classified."],
             "evidence_strength": "LOW",
@@ -129,9 +151,15 @@ class ResilientStructuredLLM:
         if self.primary is not None:
             try:
                 return self.primary.complete_json(system, user)
-            except Exception:
-                pass
-        warning = "Zhipu unavailable — local deterministic fallback used for reasoning."
+            except Exception as exc:
+                stage = _llm_stage(system)
+                underlying = exc.__cause__ or exc
+                warning = (
+                    "Zhipu unavailable during "
+                    f"{stage} ({type(underlying).__name__}) — local deterministic fallback used."
+                )
+        else:
+            warning = "Zhipu unavailable — local deterministic fallback used for reasoning."
         if warning not in self._warnings:
             self._warnings.append(warning)
         return self.fallback.complete_json(system, user)
@@ -191,6 +219,20 @@ def _first_sentence(value: str) -> str:
     value = value.strip()
     match = re.search(r"^.*?[.!?](?:\s|$)", value)
     return (match.group(0) if match else value[:240]).strip()
+
+
+def _llm_stage(system: str) -> str:
+    """Return a safe operation label without including prompt or document text."""
+    lowered = system.lower()
+    if "initial plan" in lowered or "planner" in lowered:
+        return "research planning"
+    if "bounded market research loop" in lowered:
+        return "agent decision"
+    if "analyze market evidence" in lowered:
+        return "evidence analysis"
+    if "market intelligence brief" in lowered:
+        return "brief synthesis"
+    return "structured reasoning"
 
 
 def _development_log(provider: str, exc: Exception, *, secret: str = "", context: str = "") -> None:

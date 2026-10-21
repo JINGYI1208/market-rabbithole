@@ -1,172 +1,126 @@
 # Market RabbitHole
 
-**Market RabbitHole takes a market question, creates a research plan, searches both private/local documents and live web sources, analyzes conflicting evidence, and produces a cited market brief.**
+**A bounded market-research agent that decides what to investigate next, combines private documents with current web evidence, challenges contradictions, and produces a cited brief.**
 
 ## Demo
 
-[▶ Watch the Market RabbitHole demo](assets/market-rabbithole-demo.mov)
+[▶ Watch the product demo](assets/market-rabbithole-demo.mov)
+
+The Streamlit app has two deliberately separate modes:
+
+- **Public Demo** replays three reproducible, fixture-based runs of the real agent loop with zero API usage.
+- **Live Agent** is server-gated and runs bounded research with local RAG, Tavily, and Zhipu GLM.
 
 ## Why I built this
 
-Generic LLM answers often hide what evidence was used, whether current information conflicts with existing research, and where uncertainty comes from. Market RabbitHole is therefore organized around a transparent research workflow:
+Generic LLM answers often obscure which evidence was used, whether recent information conflicts with prior research, and where uncertainty comes from. Market RabbitHole turns that opaque answer into an inspectable workflow:
 
-**Plan → Retrieve → Analyze → Challenge → Synthesize → Cite**
+**Plan → Decide → Retrieve → Analyze → Challenge → Synthesize → Verify citations**
 
-Local RAG supplies private and contextual evidence, while live search adds recency. Evidence classification and Conflict Radar surface disagreement, and citations keep the final view traceable to its sources.
+Local RAG supplies private context, live search supplies recency, and structured evidence analysis makes disagreement and uncertainty visible.
 
-## How it works
+## What makes it agentic
 
-```text
-Market Question
-      ↓
-GLM Research Planning
-      ↓
-Local Semantic RAG  +  Tavily Live Web Search
-      ↓
-Unified Evidence Pool
-      ↓
-GLM Evidence Analysis
-      ↓
-Conflict Detection
-      ↓
-Cited Market Brief
-```
+After creating an initial research plan, one controller chooses exactly one action on each iteration: search local sources, search the live web, analyze collected evidence, or stop. Its choice depends on the current evidence, detected conflicts, named evidence gaps, and remaining budget. Programmatic validation rejects unknown tools, invalid angles, premature stops, and out-of-budget calls.
 
-Users can optionally upload private `.pdf`, `.md`, or `.txt` research before asking a question. Uploaded files are processed in memory for that request only and are never added to persistent storage.
-
-## Key features
-
-- **Dynamic Research Planning** — Zhipu GLM creates question-specific research angles and exposes the workflow through a Research Trace.
-- **Hybrid Retrieval** — Local RAG searches bundled and optionally uploaded documents; conservative Tavily searches add current web evidence and source URLs.
-- **Evidence Reasoning** — GLM extracts claims, classifies evidence as SUPPORT, CONTRADICT, or NEUTRAL, and assigns qualitative Evidence Strength without implying statistical confidence.
-- **Conflict Detection** — Conflict Radar highlights research angles containing meaningful supporting and contradicting evidence.
-- **Traceable Synthesis** — the market brief links local evidence through `[L#]` citations and web evidence through clickable `[W#]` sources, with understandable fallbacks if an external provider fails.
-
-## Example research question
-
-September 2026 FOMC portfolio case:
-
-> **How has the September 2026 FOMC meeting changed the US rates outlook compared with the prior policy path, and what are the implications for 2Y Treasuries, US tech stocks, and gold over the next 3–6 months? Identify the key risks that could invalidate the base case.**
-
-The resulting page separates:
-
-- Executive Summary
-- Key Findings
-- Evidence from uploaded/local documents
-- Live Web Evidence
-- Risks / Caveats
-- Conflict Radar
-- Sources and citations
-- What to Monitor Next
-
-## Architecture
+This is not an unrestricted autonomous agent. It is intentionally bounded by iteration, search, result, upload, and concurrency limits.
 
 ```text
-app.py                         Server-rendered research UI
-  ↓
-MarketRabbitHoleAgent          Sequential orchestration
-  ├── SemanticRAG              TXT/MD/PDF → chunks → embeddings → cosine top-k
-  ├── TavilySearchProvider     Basic live search, one result per research angle
-  ├── ZhipuStructuredLLM       Planning, evidence classification, synthesis
-  └── Resilient fallbacks      Sanitized errors and local-only degradation
-  ↓
-MarketResearch                 In-memory evidence, conflicts, citations, brief
+Question + optional PDF/MD/TXT
+          ↓
+Initial research plan
+          ↓
+┌── Bounded decision loop ─────────────────────────┐
+│ decide → hybrid local RAG / Tavily / analyze     │
+│          → inspect gaps & contradictions → stop  │
+└───────────────────────────────────────────────────┘
+          ↓
+Evidence model: claim · stance · type · time · assumptions
+          ↓
+Conflict detection → cited brief → citation-ID verification
 ```
 
-### Technical implementation
+## Core capabilities
 
-- Local documents are split into overlapping 140-word chunks.
-- `sentence-transformers/all-MiniLM-L6-v2` creates normalized dense embeddings.
-- NumPy cosine similarity provides lightweight in-memory top-k retrieval.
-- Tavily contributes fresh snippets, dates, publishers, and clickable URLs.
-- Zhipu GLM returns structured JSON for planning, evidence analysis, and final synthesis.
-- Conflict detection is deterministic: an angle is flagged when analyzed evidence contains both SUPPORT and CONTRADICT signals.
-- Tests use provider mocks and never consume real Tavily or Zhipu credits.
+- **Dynamic research control** — the LLM chooses follow-up actions from actual state; a structured event stream shows decisions, tool calls, gaps, contradictions, verification, and stop reason without exposing chain-of-thought.
+- **Hybrid retrieval** — normalized semantic similarity plus lightweight lexical overlap searches bundled and request-scoped uploaded sources; Tavily provides current web evidence.
+- **Evidence reasoning** — each item becomes a grounded claim classified as fact, opinion, or forecast and SUPPORT, CONTRADICT, or NEUTRAL, with time period and assumptions.
+- **Conflict detection** — deterministic logic surfaces opposing analyzed claims and their citation IDs, while distinguishing possible time-period or assumption differences.
+- **Traceable synthesis** — conclusions carry evidence IDs; a programmatic verifier removes nonexistent citations and flags unsupported conclusions. This validates citation existence, not full semantic entailment.
 
-## Tech stack
+## Example question
 
-- Python 3.10+
-- `sentence-transformers`
-- NumPy
-- `pypdf`
-- Tavily Search API
-- Zhipu BigModel / GLM API
-- Python standard-library HTTP server
-- Pytest
+> How has the September 2026 FOMC meeting changed the US rates outlook compared with the prior policy path, and what are the implications for 2Y Treasuries, US tech stocks, and gold over the next 3–6 months? Identify the key risks that could invalidate the base case.
 
-## Local setup
+## Quick start
 
 ```bash
-git clone <your-repository-url>
-cd market-rabbithole
-
 conda create -n market-rabbithole python=3.12 -y
 conda activate market-rabbithole
 python -m pip install -e '.[test]'
-
 cp .env.example .env
+streamlit run streamlit_app.py
 ```
 
-Add your own keys to `.env`:
+Open `http://localhost:8501`. Public Demo works without credentials. For Live Agent, add your own keys to `.env` and set `RABBITHOLE_LIVE_ENABLED=1`:
 
 ```dotenv
 ZHIPUAI_API_KEY=your_zhipu_api_key
 TAVILY_API_KEY=your_tavily_api_key
-
-# Optional overrides
 ZHIPU_MODEL=glm-4-flash
-EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-RABBITHOLE_DEBUG=0
+RABBITHOLE_LIVE_ENABLED=1
 ```
 
-Never commit `.env`. It is ignored by Git.
+Never commit `.env` or `.streamlit/secrets.toml`. Uploaded files stay in memory for that request and are not added to the bundled index. Relevant excerpts are sent to the configured LLM, so users should only upload material they are permitted to share with that provider.
 
-Start the application:
+The original local HTTP interface remains available with `python app.py`. The CLI is:
 
 ```bash
-python app.py
+rabbithole "What could change the copper market balance?" --max-iterations 8
 ```
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
+## Technical stack
 
-The embedding model downloads locally on first use.
+Python 3.12 · Streamlit · `sentence-transformers/all-MiniLM-L6-v2` · NumPy · Tavily Search · Zhipu GLM · PyPDF · Pytest
 
-## Testing
+- Source documents: request-scoped PDF/Markdown/text plus a small bundled fallback corpus.
+- Chunking: independently implemented, sentence-aware overlapping windows with source metadata.
+- Retrieval: in-memory dense embeddings with configurable lexical-score fusion; no vector database is required for the prototype corpus.
+- Providers: structured JSON calls with deterministic, sanitized fallback behavior.
+- State: request-local Python objects; no accounts, database, or persistent upload storage.
+
+## Validation
 
 ```bash
 pytest -q
+python evaluation/run_evaluation.py
+python -m compileall -q app.py streamlit_app.py src tests
 ```
 
-The suite covers semantic retrieval, request-scoped uploads, Tavily request configuration, GLM structured responses, citations, and provider failure fallbacks.
+The deterministic evaluation fixture currently reports Recall@1 of **1.0 for both semantic-only and 20% keyword-fused retrieval** across four small cases. It verifies behavior but does not demonstrate a quality improvement or production performance. See [evaluation details](docs/EVALUATION.md).
 
-## Privacy behavior
+## Documentation
 
-- Uploaded PDF/Markdown/text files remain in memory for the current request.
-- Uploads are not written to a database or document library.
-- The bundled semantic index is not mutated by uploaded files.
-- API keys are read from environment variables and sanitized from development logs.
-- Relevant retrieved excerpts are sent to GLM for evidence analysis and synthesis; users should not upload material they are not permitted to send to the configured API provider.
+- [Architecture audit](docs/ARCHITECTURE_AUDIT.md) — what the pre-upgrade system actually did
+- [Current architecture](docs/ARCHITECTURE.md) — loop, tools, state, evidence, and safeguards
+- [Evaluation](docs/EVALUATION.md) — test coverage, retrieval fixture, and limitations
+- [Deployment](docs/DEPLOYMENT.md) — Streamlit Community Cloud configuration
+- [Portfolio narrative](docs/PORTFOLIO.md) — one-minute explanation and résumé bullets
 
-## Limitations and future improvements
+## Limitations
 
-Market RabbitHole is designed as a research workflow prototype; production deployment would require stronger security, evaluation, persistence, and operational controls.
-
-- No authentication, persistent sessions, scheduled monitoring, or database.
-- Evidence Strength is qualitative rather than statistically calibrated.
-- Search coverage depends on Tavily; reasoning quality depends on the configured GLM model.
-- PDF extraction does not include OCR for scanned documents.
-- NumPy retrieval is appropriate for a small corpus; FAISS or a persistent vector store would be the next step at larger scale.
-- A production version should add a labeled evaluation set for retrieval recall, stance accuracy, citation faithfulness, and brief quality.
+Market RabbitHole is a research-workflow prototype; production deployment would require hardened authentication, encrypted persistence, broader evaluation, observability, abuse controls, and provider-level data governance. Evidence strength is qualitative rather than statistically calibrated. Citation verification checks IDs, not entailment. PDF extraction has no OCR, Tavily coverage varies, and the in-memory index is intended for small corpora.
 
 ## Repository map
 
 ```text
-assets/market-rabbithole-demo.mov  Portfolio demo
-app.py                             UI and HTTP entry point
-sample_corpus/                     Bundled fallback/demo knowledge
-src/rabbithole/market_agent.py     Market research workflow and models
-src/rabbithole/semantic_rag.py     Parsing, chunking, embeddings, retrieval
-src/rabbithole/providers.py        Tavily, Zhipu, logging, fallbacks
-tests/                              Offline unit and workflow tests
-docs/INTERVIEW_PLAYBOOK.md         Interview narrative and trade-offs
+streamlit_app.py                Public Demo + gated Live Agent UI
+app.py                          Compatible local HTTP UI
+src/rabbithole/market_agent.py  Agent state, bounded loop, evidence, verification
+src/rabbithole/semantic_rag.py  Parsing, chunking, hybrid retrieval
+src/rabbithole/providers.py     Tavily/GLM adapters and fallbacks
+src/rabbithole/config.py        Validated server-side limits
+demo_cases/                     Recorded fixture-based agent runs
+evaluation/                     Deterministic retrieval evaluation
+tests/                          Offline tests; no API credits consumed
 ```

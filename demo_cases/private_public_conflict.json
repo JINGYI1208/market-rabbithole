@@ -1,0 +1,463 @@
+{
+  "title": "Conflicting private and public market evidence",
+  "description": "Shows how private channel checks can conflict with current public reporting without hiding the disagreement.",
+  "fixture_based": true,
+  "generated_by": "scripts/generate_demo_fixtures.py",
+  "result": {
+    "question": "How should an analyst reconcile weakening private demand checks with optimistic public company guidance?",
+    "angles": [
+      {
+        "name": "Fundamentals vs expectations",
+        "question": "What evidence supports or challenges the base case?",
+        "rationale": "Separates operating evidence from expectations."
+      },
+      {
+        "name": "Timing and assumptions",
+        "question": "Which horizon and assumptions drive disagreement?",
+        "rationale": "Prevents false contradictions."
+      },
+      {
+        "name": "Invalidation risk",
+        "question": "What would invalidate the current view?",
+        "rationale": "Defines monitoring conditions."
+      }
+    ],
+    "evidence": [
+      {
+        "id": "local:private_public_conflict-0",
+        "source_type": "LOCAL",
+        "title": "Conflicting private and public market evidence",
+        "source": "private",
+        "locator": "fixture://private_public_conflict/private",
+        "date": "",
+        "excerpt": "Private distributor checks report slower order growth and elevated customer inventories during the current quarter.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "L1",
+        "stance": "CONTRADICT",
+        "key_claim": "Private distributor checks report slower order growth and elevated customer inventories during the current quarter.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FACT",
+        "time_period": "current or forward",
+        "assumptions": [],
+        "relevance": 0.415
+      },
+      {
+        "id": "local:private_public_conflict-2",
+        "source_type": "LOCAL",
+        "title": "Conflicting private and public market evidence",
+        "source": "private",
+        "locator": "fixture://private_public_conflict/private",
+        "date": "",
+        "excerpt": "Internal base-case research expects a cautious demand recovery rather than immediate acceleration.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "L2",
+        "stance": "SUPPORT",
+        "key_claim": "Internal base-case research expects a cautious demand recovery rather than immediate acceleration.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FORECAST",
+        "time_period": "current or forward",
+        "assumptions": [
+          "Other market drivers remain broadly stable"
+        ],
+        "relevance": 0.261
+      },
+      {
+        "id": "local:private_public_conflict-1",
+        "source_type": "LOCAL",
+        "title": "Conflicting private and public market evidence",
+        "source": "private",
+        "locator": "fixture://private_public_conflict/private",
+        "date": "",
+        "excerpt": "The channel sample is limited and may overrepresent smaller customers with tighter financing conditions.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "L3",
+        "stance": "SUPPORT",
+        "key_claim": "The channel sample is limited and may overrepresent smaller customers with tighter financing conditions.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FACT",
+        "time_period": "current or forward",
+        "assumptions": [],
+        "relevance": 0.197
+      },
+      {
+        "id": "web:https://example.com/private_public_conflict/1",
+        "source_type": "WEB",
+        "title": "Fixture public source 1",
+        "source": "example.com",
+        "locator": "https://example.com/private_public_conflict/1",
+        "date": "2026-10-01",
+        "excerpt": "Public company guidance forecasts stronger second-half demand and cites a growing pipeline of customer projects.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "W1",
+        "stance": "SUPPORT",
+        "key_claim": "Public company guidance forecasts stronger second-half demand and cites a growing pipeline of customer projects.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FORECAST",
+        "time_period": "current or forward",
+        "assumptions": [
+          "Other market drivers remain broadly stable"
+        ],
+        "relevance": null
+      },
+      {
+        "id": "web:https://example.com/private_public_conflict/2",
+        "source_type": "WEB",
+        "title": "Fixture public source 2",
+        "source": "example.com",
+        "locator": "https://example.com/private_public_conflict/2",
+        "date": "2026-10-01",
+        "excerpt": "A subsequent industry survey reports mixed end-market conditions, leaving the timing of recovery unresolved.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "W2",
+        "stance": "SUPPORT",
+        "key_claim": "A subsequent industry survey reports mixed end-market conditions, leaving the timing of recovery unresolved.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FACT",
+        "time_period": "current or forward",
+        "assumptions": [],
+        "relevance": null
+      }
+    ],
+    "conflicts": [
+      {
+        "angle": "Fundamentals vs expectations",
+        "support": [
+          "Internal base-case research expects a cautious demand recovery rather than immediate acceleration.",
+          "The channel sample is limited and may overrepresent smaller customers with tighter financing conditions."
+        ],
+        "contradict": [
+          "Private distributor checks report slower order growth and elevated customer inventories during the current quarter."
+        ],
+        "support_citations": [
+          "L2",
+          "L3"
+        ],
+        "contradict_citations": [
+          "L1"
+        ],
+        "explanation": "Opposing claims may reflect different assumptions."
+      }
+    ],
+    "brief": {
+      "current_view": "Private distributor checks report slower order growth and elevated customer inventories during the current quarter. [L1] Internal base-case research expects a cautious demand recovery rather than immediate acceleration. [L2]",
+      "key_drivers": [
+        "↔ Private distributor checks report slower order growth and elevated customer inventories during the current quarter. [L1]",
+        "↔ Internal base-case research expects a cautious demand recovery rather than immediate acceleration. [L2]",
+        "↔ The channel sample is limited and may overrepresent smaller customers with tighter financing conditions. [L3]"
+      ],
+      "conflicting_signals": [
+        "Supporting and opposing evidence coexist; timing and assumptions remain unresolved."
+      ],
+      "evidence_strength": "MEDIUM",
+      "monitor_next": [
+        "Updated company guidance",
+        "Inventory or order data",
+        "Evidence that resolves the stated assumptions"
+      ],
+      "conclusions": [
+        {
+          "statement": "Internal base-case research expects a cautious demand recovery rather than immediate acceleration.",
+          "citations": [
+            "L2"
+          ],
+          "uncertainty": "The conclusion depends on the stated horizon.",
+          "citation_verified": true
+        },
+        {
+          "statement": "Private distributor checks report slower order growth and elevated customer inventories during the current quarter.",
+          "citations": [
+            "L1"
+          ],
+          "uncertainty": "The opposing signal may use different assumptions.",
+          "citation_verified": true
+        }
+      ],
+      "unsupported_claims": []
+    },
+    "trace": [
+      {
+        "event_type": "initial_research_plan",
+        "detail": "Created 3 question-specific research angles",
+        "iteration": 0,
+        "tool": "",
+        "status": "ok",
+        "metadata": {
+          "angle_count": 3
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Establish the private research baseline.",
+        "iteration": 1,
+        "tool": "search_local",
+        "status": "ok",
+        "metadata": {
+          "action": "search_local",
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "evidence_gap_detected",
+        "detail": "No private evidence has been examined.",
+        "iteration": 1,
+        "tool": "search_local",
+        "status": "ok",
+        "metadata": {
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected private/local retrieval",
+        "iteration": 1,
+        "tool": "search_local",
+        "status": "ok",
+        "metadata": {
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "search_performed",
+        "detail": "Local retrieval added 3 new evidence items",
+        "iteration": 1,
+        "tool": "search_local",
+        "status": "ok",
+        "metadata": {
+          "result_count": 3
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Classify newly retrieved evidence before deciding what is missing.",
+        "iteration": 2,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "action": "analyze_evidence",
+          "angle": ""
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected structured evidence analysis",
+        "iteration": 2,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {}
+      },
+      {
+        "event_type": "evidence_analyzed",
+        "detail": "Analyzed 3 evidence items",
+        "iteration": 2,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "evidence_count": 3
+        }
+      },
+      {
+        "event_type": "contradiction_found",
+        "detail": "Found 1 research angles with opposing evidence",
+        "iteration": 2,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "conflict_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Test private context against current public evidence.",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "action": "search_web",
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "evidence_gap_detected",
+        "detail": "The private view lacks current public confirmation.",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected live web research",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "search_performed",
+        "detail": "Web research added 1 new evidence items",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "result_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Classify newly retrieved evidence before deciding what is missing.",
+        "iteration": 4,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "action": "analyze_evidence",
+          "angle": ""
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected structured evidence analysis",
+        "iteration": 4,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {}
+      },
+      {
+        "event_type": "evidence_analyzed",
+        "detail": "Analyzed 4 evidence items",
+        "iteration": 4,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "evidence_count": 4
+        }
+      },
+      {
+        "event_type": "contradiction_found",
+        "detail": "Found 1 research angles with opposing evidence",
+        "iteration": 4,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "conflict_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Investigate the detected contradiction before stopping.",
+        "iteration": 5,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "action": "search_web",
+          "angle": "Timing and assumptions"
+        }
+      },
+      {
+        "event_type": "evidence_gap_detected",
+        "detail": "The conflict may reflect different periods or assumptions.",
+        "iteration": 5,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "angle": "Timing and assumptions"
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected live web research",
+        "iteration": 5,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "angle": "Timing and assumptions"
+        }
+      },
+      {
+        "event_type": "search_performed",
+        "detail": "Web research added 1 new evidence items",
+        "iteration": 5,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "result_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Classify newly retrieved evidence before deciding what is missing.",
+        "iteration": 6,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "action": "analyze_evidence",
+          "angle": ""
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected structured evidence analysis",
+        "iteration": 6,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {}
+      },
+      {
+        "event_type": "evidence_analyzed",
+        "detail": "Analyzed 5 evidence items",
+        "iteration": 6,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "evidence_count": 5
+        }
+      },
+      {
+        "event_type": "contradiction_found",
+        "detail": "Found 1 research angles with opposing evidence",
+        "iteration": 6,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "conflict_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "The evidence is analyzed, the contradiction is explicit, and the follow-up budget has been used selectively.",
+        "iteration": 7,
+        "tool": "stop",
+        "status": "ok",
+        "metadata": {
+          "action": "stop",
+          "angle": ""
+        }
+      },
+      {
+        "event_type": "research_stopped",
+        "detail": "The evidence is analyzed, the contradiction is explicit, and the follow-up budget has been used selectively.",
+        "iteration": 7,
+        "tool": "stop",
+        "status": "ok",
+        "metadata": {}
+      },
+      {
+        "event_type": "citation_verification_completed",
+        "detail": "Verified 2 cited conclusions; 0 lacked valid evidence links",
+        "iteration": 7,
+        "tool": "citation_verifier",
+        "status": "ok",
+        "metadata": {
+          "verified": 2,
+          "unsupported": 0
+        }
+      }
+    ],
+    "warnings": [],
+    "stop_reason": "The evidence is analyzed, the contradiction is explicit, and the follow-up budget has been used selectively.",
+    "iterations": 7
+  }
+}

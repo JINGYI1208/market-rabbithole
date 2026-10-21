@@ -1,5 +1,5 @@
 """Market RabbitHole research workflow."""
 
-from rabbithole.market_agent import MarketRabbitHoleAgent, MarketResearch
+from rabbithole.market_agent import AgentLimits, MarketRabbitHoleAgent, MarketResearch, ResearchEvent
 
-__all__ = ["MarketRabbitHoleAgent", "MarketResearch"]
+__all__ = ["AgentLimits", "MarketRabbitHoleAgent", "MarketResearch", "ResearchEvent"]

@@ -1,0 +1,465 @@
+{
+  "title": "AI semiconductor fundamentals vs valuation expectations",
+  "description": "Tests whether strong demand evidence is already reflected in valuation and expectations.",
+  "fixture_based": true,
+  "generated_by": "scripts/generate_demo_fixtures.py",
+  "result": {
+    "question": "Are AI semiconductor fundamentals strong enough to justify current valuation expectations over the next 6–12 months?",
+    "angles": [
+      {
+        "name": "Fundamentals vs expectations",
+        "question": "What evidence supports or challenges the base case?",
+        "rationale": "Separates operating evidence from expectations."
+      },
+      {
+        "name": "Timing and assumptions",
+        "question": "Which horizon and assumptions drive disagreement?",
+        "rationale": "Prevents false contradictions."
+      },
+      {
+        "name": "Invalidation risk",
+        "question": "What would invalidate the current view?",
+        "rationale": "Defines monitoring conditions."
+      }
+    ],
+    "evidence": [
+      {
+        "id": "local:ai_semiconductors-2",
+        "source_type": "LOCAL",
+        "title": "AI semiconductor fundamentals vs valuation expectations",
+        "source": "private",
+        "locator": "fixture://ai_semiconductors/private",
+        "date": "",
+        "excerpt": "Advanced packaging capacity is improving, but supply-chain concentration remains a material execution risk.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "L1",
+        "stance": "SUPPORT",
+        "key_claim": "Advanced packaging capacity is improving, but supply-chain concentration remains a material execution risk.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FACT",
+        "time_period": "current or forward",
+        "assumptions": [],
+        "relevance": 0.321
+      },
+      {
+        "id": "local:ai_semiconductors-1",
+        "source_type": "LOCAL",
+        "title": "AI semiconductor fundamentals vs valuation expectations",
+        "source": "private",
+        "locator": "fixture://ai_semiconductors/private",
+        "date": "",
+        "excerpt": "However, premium valuation multiples assume sustained growth and leave equities exposed if deployment or monetization slows.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "L2",
+        "stance": "CONTRADICT",
+        "key_claim": "However, premium valuation multiples assume sustained growth and leave equities exposed if deployment or monetization slows.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FACT",
+        "time_period": "current or forward",
+        "assumptions": [],
+        "relevance": 0.281
+      },
+      {
+        "id": "local:ai_semiconductors-0",
+        "source_type": "LOCAL",
+        "title": "AI semiconductor fundamentals vs valuation expectations",
+        "source": "private",
+        "locator": "fixture://ai_semiconductors/private",
+        "date": "",
+        "excerpt": "Accelerator demand and hyperscaler capital expenditure remain strong, supporting continued revenue growth for leading AI chip suppliers.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "L3",
+        "stance": "SUPPORT",
+        "key_claim": "Accelerator demand and hyperscaler capital expenditure remain strong, supporting continued revenue growth for leading AI chip suppliers.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FACT",
+        "time_period": "current or forward",
+        "assumptions": [],
+        "relevance": 0.254
+      },
+      {
+        "id": "web:https://example.com/ai_semiconductors/1",
+        "source_type": "WEB",
+        "title": "Fixture public source 1",
+        "source": "example.com",
+        "locator": "https://example.com/ai_semiconductors/1",
+        "date": "2026-10-01",
+        "excerpt": "Recent company guidance indicates continued data-center demand, while management describes the outlook rather than a guaranteed result.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "W1",
+        "stance": "SUPPORT",
+        "key_claim": "Recent company guidance indicates continued data-center demand, while management describes the outlook rather than a guaranteed result.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FORECAST",
+        "time_period": "current or forward",
+        "assumptions": [
+          "Other market drivers remain broadly stable"
+        ],
+        "relevance": null
+      },
+      {
+        "id": "web:https://example.com/ai_semiconductors/2",
+        "source_type": "WEB",
+        "title": "Fixture public source 2",
+        "source": "example.com",
+        "locator": "https://example.com/ai_semiconductors/2",
+        "date": "2026-10-01",
+        "excerpt": "A valuation review notes that consensus expectations already embed rapid earnings growth and could reset on weaker forward guidance.",
+        "research_angle": "Fundamentals vs expectations",
+        "citation_id": "W2",
+        "stance": "CONTRADICT",
+        "key_claim": "A valuation review notes that consensus expectations already embed rapid earnings growth and could reset on weaker forward guidance.",
+        "explanation": "Fixture classification grounded in the recorded passage.",
+        "evidence_kind": "FORECAST",
+        "time_period": "current or forward",
+        "assumptions": [
+          "Other market drivers remain broadly stable"
+        ],
+        "relevance": null
+      }
+    ],
+    "conflicts": [
+      {
+        "angle": "Fundamentals vs expectations",
+        "support": [
+          "Advanced packaging capacity is improving, but supply-chain concentration remains a material execution risk.",
+          "Accelerator demand and hyperscaler capital expenditure remain strong, supporting continued revenue growth for leading AI chip suppliers."
+        ],
+        "contradict": [
+          "However, premium valuation multiples assume sustained growth and leave equities exposed if deployment or monetization slows.",
+          "A valuation review notes that consensus expectations already embed rapid earnings growth and could reset on weaker forward guidance."
+        ],
+        "support_citations": [
+          "L1",
+          "L3"
+        ],
+        "contradict_citations": [
+          "L2",
+          "W2"
+        ],
+        "explanation": "Opposing claims may reflect different assumptions."
+      }
+    ],
+    "brief": {
+      "current_view": "Advanced packaging capacity is improving, but supply-chain concentration remains a material execution risk. [L1] However, premium valuation multiples assume sustained growth and leave equities exposed if deployment or monetization slows. [L2]",
+      "key_drivers": [
+        "↔ Advanced packaging capacity is improving, but supply-chain concentration remains a material execution risk. [L1]",
+        "↔ However, premium valuation multiples assume sustained growth and leave equities exposed if deployment or monetization slows. [L2]",
+        "↔ Accelerator demand and hyperscaler capital expenditure remain strong, supporting continued revenue growth for leading AI chip suppliers. [L3]"
+      ],
+      "conflicting_signals": [
+        "Supporting and opposing evidence coexist; timing and assumptions remain unresolved."
+      ],
+      "evidence_strength": "MEDIUM",
+      "monitor_next": [
+        "Updated company guidance",
+        "Inventory or order data",
+        "Evidence that resolves the stated assumptions"
+      ],
+      "conclusions": [
+        {
+          "statement": "Advanced packaging capacity is improving, but supply-chain concentration remains a material execution risk.",
+          "citations": [
+            "L1"
+          ],
+          "uncertainty": "The conclusion depends on the stated horizon.",
+          "citation_verified": true
+        },
+        {
+          "statement": "However, premium valuation multiples assume sustained growth and leave equities exposed if deployment or monetization slows.",
+          "citations": [
+            "L2"
+          ],
+          "uncertainty": "The opposing signal may use different assumptions.",
+          "citation_verified": true
+        }
+      ],
+      "unsupported_claims": []
+    },
+    "trace": [
+      {
+        "event_type": "initial_research_plan",
+        "detail": "Created 3 question-specific research angles",
+        "iteration": 0,
+        "tool": "",
+        "status": "ok",
+        "metadata": {
+          "angle_count": 3
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Establish the private research baseline.",
+        "iteration": 1,
+        "tool": "search_local",
+        "status": "ok",
+        "metadata": {
+          "action": "search_local",
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "evidence_gap_detected",
+        "detail": "No private evidence has been examined.",
+        "iteration": 1,
+        "tool": "search_local",
+        "status": "ok",
+        "metadata": {
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected private/local retrieval",
+        "iteration": 1,
+        "tool": "search_local",
+        "status": "ok",
+        "metadata": {
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "search_performed",
+        "detail": "Local retrieval added 3 new evidence items",
+        "iteration": 1,
+        "tool": "search_local",
+        "status": "ok",
+        "metadata": {
+          "result_count": 3
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Classify newly retrieved evidence before deciding what is missing.",
+        "iteration": 2,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "action": "analyze_evidence",
+          "angle": ""
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected structured evidence analysis",
+        "iteration": 2,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {}
+      },
+      {
+        "event_type": "evidence_analyzed",
+        "detail": "Analyzed 3 evidence items",
+        "iteration": 2,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "evidence_count": 3
+        }
+      },
+      {
+        "event_type": "contradiction_found",
+        "detail": "Found 1 research angles with opposing evidence",
+        "iteration": 2,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "conflict_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Test private context against current public evidence.",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "action": "search_web",
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "evidence_gap_detected",
+        "detail": "The private view lacks current public confirmation.",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected live web research",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "angle": "Fundamentals vs expectations"
+        }
+      },
+      {
+        "event_type": "search_performed",
+        "detail": "Web research added 1 new evidence items",
+        "iteration": 3,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "result_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Classify newly retrieved evidence before deciding what is missing.",
+        "iteration": 4,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "action": "analyze_evidence",
+          "angle": ""
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected structured evidence analysis",
+        "iteration": 4,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {}
+      },
+      {
+        "event_type": "evidence_analyzed",
+        "detail": "Analyzed 4 evidence items",
+        "iteration": 4,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "evidence_count": 4
+        }
+      },
+      {
+        "event_type": "contradiction_found",
+        "detail": "Found 1 research angles with opposing evidence",
+        "iteration": 4,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "conflict_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Investigate the detected contradiction before stopping.",
+        "iteration": 5,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "action": "search_web",
+          "angle": "Timing and assumptions"
+        }
+      },
+      {
+        "event_type": "evidence_gap_detected",
+        "detail": "The conflict may reflect different periods or assumptions.",
+        "iteration": 5,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "angle": "Timing and assumptions"
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected live web research",
+        "iteration": 5,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "angle": "Timing and assumptions"
+        }
+      },
+      {
+        "event_type": "search_performed",
+        "detail": "Web research added 1 new evidence items",
+        "iteration": 5,
+        "tool": "search_web",
+        "status": "ok",
+        "metadata": {
+          "result_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "Classify newly retrieved evidence before deciding what is missing.",
+        "iteration": 6,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "action": "analyze_evidence",
+          "angle": ""
+        }
+      },
+      {
+        "event_type": "tool_selected",
+        "detail": "Agent selected structured evidence analysis",
+        "iteration": 6,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {}
+      },
+      {
+        "event_type": "evidence_analyzed",
+        "detail": "Analyzed 5 evidence items",
+        "iteration": 6,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "evidence_count": 5
+        }
+      },
+      {
+        "event_type": "contradiction_found",
+        "detail": "Found 1 research angles with opposing evidence",
+        "iteration": 6,
+        "tool": "analyze_evidence",
+        "status": "ok",
+        "metadata": {
+          "conflict_count": 1
+        }
+      },
+      {
+        "event_type": "agent_decision",
+        "detail": "The evidence is analyzed, the contradiction is explicit, and the follow-up budget has been used selectively.",
+        "iteration": 7,
+        "tool": "stop",
+        "status": "ok",
+        "metadata": {
+          "action": "stop",
+          "angle": ""
+        }
+      },
+      {
+        "event_type": "research_stopped",
+        "detail": "The evidence is analyzed, the contradiction is explicit, and the follow-up budget has been used selectively.",
+        "iteration": 7,
+        "tool": "stop",
+        "status": "ok",
+        "metadata": {}
+      },
+      {
+        "event_type": "citation_verification_completed",
+        "detail": "Verified 2 cited conclusions; 0 lacked valid evidence links",
+        "iteration": 7,
+        "tool": "citation_verifier",
+        "status": "ok",
+        "metadata": {
+          "verified": 2,
+          "unsupported": 0
+        }
+      }
+    ],
+    "warnings": [],
+    "stop_reason": "The evidence is analyzed, the contradiction is explicit, and the follow-up budget has been used selectively.",
+    "iterations": 7
+  }
+}
