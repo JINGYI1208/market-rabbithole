@@ -1,15 +1,21 @@
-"""Session-scoped research records and portable exports.
+"""Research records, privacy-safe browser serialization, and portable exports.
 
-This module has no persistence layer. Callers decide where the returned list lives;
-the Streamlit app keeps it exclusively in the current session state.
+This module has no server persistence layer. The Streamlit app keeps full records in
+session state and stores a redacted, bounded copy in the current browser.
 """
 
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
+
+
+HISTORY_SCHEMA_VERSION = 2
+BROWSER_HISTORY_MAX_RECORDS = 20
+BROWSER_HISTORY_MAX_BYTES = 2_000_000
 
 
 def run_status(result: dict[str, Any]) -> str:
@@ -20,11 +26,17 @@ def run_status(result: dict[str, Any]) -> str:
     return "Completed"
 
 
-def create_record(result: dict[str, Any], *, created_at: str | None = None, record_id: str | None = None) -> dict[str, Any]:
+def create_record(
+    result: dict[str, Any],
+    *,
+    created_at: str | None = None,
+    record_id: str | None = None,
+    parent_run_id: str | None = None,
+) -> dict[str, Any]:
     question = " ".join(str(result.get("question", "Untitled research")).split())
     brief = result.get("brief", {})
     return {
-        "schema_version": 1,
+        "schema_version": HISTORY_SCHEMA_VERSION,
         "id": record_id or uuid4().hex,
         "title": question[:100] or "Untitled research",
         "question": question,
@@ -33,17 +45,18 @@ def create_record(result: dict[str, Any], *, created_at: str | None = None, reco
         "evidence_strength": str(brief.get("evidence_strength", "LOW")),
         "source_count": len(result.get("evidence", [])),
         "status": run_status(result),
+        "parent_run_id": parent_run_id,
         "result": result,
     }
 
 
-def add_record(history: list[dict[str, Any]], result: dict[str, Any]) -> dict[str, Any]:
-    record = create_record(result)
+def add_record(history: list[dict[str, Any]], result: dict[str, Any], *, parent_run_id: str | None = None) -> dict[str, Any]:
+    record = create_record(result, parent_run_id=parent_run_id)
     history.insert(0, record)
     return record
 
 
-def add_failed_record(history: list[dict[str, Any]], question: str, error_type: str) -> dict[str, Any]:
+def add_failed_record(history: list[dict[str, Any]], question: str, error_type: str, *, parent_run_id: str | None = None) -> dict[str, Any]:
     """Record a safe failure without exception text, prompts, or uploaded content."""
     result = {
         "question": " ".join(question.split()),
@@ -63,7 +76,7 @@ def add_failed_record(history: list[dict[str, Any]], question: str, error_type: 
         "stop_reason": "Research failed safely.",
         "iterations": 0,
     }
-    record = create_record(result)
+    record = create_record(result, parent_run_id=parent_run_id)
     record["status"] = "Failed"
     history.insert(0, record)
     return record
@@ -82,6 +95,10 @@ def get_record(history: list[dict[str, Any]], record_id: str) -> dict[str, Any] 
     return next((record for record in history if record.get("id") == record_id), None)
 
 
+def delete_record(history: list[dict[str, Any]], record_id: str) -> list[dict[str, Any]]:
+    return [record for record in history if record.get("id") != record_id]
+
+
 def export_json(record: dict[str, Any]) -> str:
     return json.dumps(record, ensure_ascii=False, indent=2)
 
@@ -95,7 +112,88 @@ def import_json(payload: str | bytes) -> dict[str, Any]:
     result = parsed["result"]
     if not isinstance(result.get("brief"), dict) or not isinstance(result.get("evidence", []), list):
         raise ValueError("Exported research result is incomplete")
-    return create_record(result, created_at=str(parsed.get("created_at") or "") or None, record_id=str(parsed.get("id") or "") or None)
+    record = create_record(
+        result,
+        created_at=str(parsed.get("created_at") or "") or None,
+        record_id=str(parsed.get("id") or "") or None,
+        parent_run_id=str(parsed.get("parent_run_id") or "") or None,
+    )
+    if parsed.get("status") in {"Completed", "Partial", "Failed"}:
+        record["status"] = parsed["status"]
+    return record
+
+
+def browser_safe_record(record: dict[str, Any]) -> dict[str, Any]:
+    """Remove raw private/local passages before browser persistence."""
+    safe = deepcopy(record)
+    safe["schema_version"] = HISTORY_SCHEMA_VERSION
+    for item in safe.get("result", {}).get("evidence", []):
+        if item.get("source_type") == "LOCAL":
+            item["excerpt"] = ""
+            item["key_claim"] = ""
+            item["explanation"] = "Local evidence text omitted from browser storage."
+            item["browser_content_omitted"] = True
+    return safe
+
+
+def serialize_browser_history(
+    history: list[dict[str, Any]],
+    *,
+    max_records: int = BROWSER_HISTORY_MAX_RECORDS,
+    max_bytes: int = BROWSER_HISTORY_MAX_BYTES,
+) -> tuple[str, int]:
+    """Return a bounded versioned payload and the number of evicted records."""
+    records = [browser_safe_record(record) for record in history[:max_records]]
+    evicted = max(0, len(history) - len(records))
+    while True:
+        envelope = {
+            "schema_version": HISTORY_SCHEMA_VERSION,
+            "saved_at": str(records[0].get("created_at", "")) if records else "",
+            "records": records,
+        }
+        payload = json.dumps(envelope, ensure_ascii=False, separators=(",", ":"))
+        if len(payload.encode("utf-8")) <= max_bytes:
+            return payload, evicted
+        if not records:
+            raise ValueError("Browser history exceeds the configured storage limit")
+        records.pop()
+        evicted += 1
+
+
+def restore_browser_history(payload: str | None) -> list[dict[str, Any]]:
+    if not payload:
+        return []
+    try:
+        envelope = json.loads(payload)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("Browser history is corrupted and could not be restored") from exc
+    if not isinstance(envelope, dict) or envelope.get("schema_version") != HISTORY_SCHEMA_VERSION:
+        raise ValueError("Browser history uses an unsupported schema version")
+    records = envelope.get("records")
+    if not isinstance(records, list):
+        raise ValueError("Browser history records are malformed")
+    restored: list[dict[str, Any]] = []
+    for value in records[:BROWSER_HISTORY_MAX_RECORDS]:
+        if not isinstance(value, dict):
+            continue
+        try:
+            restored.append(import_json(json.dumps(value, ensure_ascii=False)))
+        except ValueError:
+            continue
+    return restored
+
+
+def merge_histories(session_records: list[dict[str, Any]], browser_records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Merge by run ID with current-session records taking precedence."""
+    merged: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for record in [*session_records, *browser_records]:
+        record_id = str(record.get("id", ""))
+        if not record_id or record_id in seen:
+            continue
+        seen.add(record_id)
+        merged.append(record)
+    return sorted(merged, key=lambda item: str(item.get("created_at", "")), reverse=True)[:BROWSER_HISTORY_MAX_RECORDS]
 
 
 def export_markdown(record: dict[str, Any]) -> str:

@@ -3,14 +3,20 @@ import json
 import pytest
 
 from rabbithole.research_history import (
+    BROWSER_HISTORY_MAX_BYTES,
+    BROWSER_HISTORY_MAX_RECORDS,
     add_failed_record,
     add_record,
     continuation_context,
+    delete_record,
     export_json,
     export_markdown,
     filter_records,
     get_record,
     import_json,
+    merge_histories,
+    restore_browser_history,
+    serialize_browser_history,
 )
 
 
@@ -84,3 +90,81 @@ def test_failed_record_contains_safe_status_without_exception_message():
     assert record["status"] == "Failed"
     assert record["source_count"] == 0
     assert "ProviderError" in record["result"]["trace"][0]["detail"]
+
+
+def test_browser_save_and_reconnect_restore_without_private_local_text():
+    source = result()
+    source["evidence"].append({
+        "citation_id": "L1", "title": "Uploaded note", "source_type": "LOCAL",
+        "locator": "private.pdf", "excerpt": "confidential uploaded paragraph",
+        "key_claim": "confidential extracted claim", "explanation": "private analysis",
+    })
+    history = []
+    record = add_record(history, source, parent_run_id="parent-123")
+
+    payload, evicted = serialize_browser_history(history)
+    restored = restore_browser_history(payload)
+
+    assert evicted == 0
+    assert restored[0]["id"] == record["id"]
+    assert restored[0]["parent_run_id"] == "parent-123"
+    assert restored[0]["result"]["brief"]["conclusions"] == source["brief"]["conclusions"]
+    local = next(item for item in restored[0]["result"]["evidence"] if item["citation_id"] == "L1")
+    assert local["excerpt"] == ""
+    assert local["key_claim"] == ""
+    assert "confidential uploaded paragraph" not in payload
+
+
+def test_browser_history_corruption_and_schema_are_rejected():
+    with pytest.raises(ValueError, match="corrupted"):
+        restore_browser_history("not-json")
+    with pytest.raises(ValueError, match="schema"):
+        restore_browser_history(json.dumps({"schema_version": 999, "records": []}))
+
+
+def test_browser_history_enforces_count_and_size_limits():
+    history = []
+    for index in range(4):
+        value = result()
+        value["question"] = f"Question {index}"
+        add_record(history, value)
+
+    payload, evicted = serialize_browser_history(history, max_records=2, max_bytes=100_000)
+    restored = restore_browser_history(payload)
+
+    assert len(restored) == 2
+    assert evicted == 2
+
+    size_limited_payload, size_evicted = serialize_browser_history(history, max_records=20, max_bytes=1_200)
+    assert len(size_limited_payload.encode("utf-8")) <= 1_200
+    assert size_evicted > 0
+
+
+def test_browser_history_default_limits_are_20_records_and_2_mb():
+    history = []
+    for index in range(BROWSER_HISTORY_MAX_RECORDS + 1):
+        value = result()
+        value["question"] = f"Question {index}"
+        add_record(history, value)
+
+    payload, evicted = serialize_browser_history(history)
+
+    assert BROWSER_HISTORY_MAX_RECORDS == 20
+    assert BROWSER_HISTORY_MAX_BYTES == 2_000_000
+    assert len(restore_browser_history(payload)) == 20
+    assert len(payload.encode("utf-8")) <= BROWSER_HISTORY_MAX_BYTES
+    assert evicted == 1
+
+
+def test_restored_records_support_open_delete_export_and_continue():
+    history = []
+    record = add_record(history, result())
+    payload, _ = serialize_browser_history(history)
+    restored = restore_browser_history(payload)
+    merged = merge_histories([], restored)
+    reopened = get_record(merged, record["id"])
+
+    assert "Market View" in export_markdown(reopened)
+    assert json.loads(export_json(reopened))["id"] == record["id"]
+    assert "previous_question" in continuation_context(reopened)
+    assert delete_record(merged, record["id"]) == []

@@ -17,6 +17,7 @@ ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from rabbithole.config import load_app_config  # noqa: E402
+from rabbithole.browser_storage import mount_browser_storage  # noqa: E402
 from rabbithole.market_agent import AgentLimits, build_market_agent  # noqa: E402
 from rabbithole.providers import log_safe_exception  # noqa: E402
 from rabbithole.research_history import (  # noqa: E402
@@ -27,6 +28,10 @@ from rabbithole.research_history import (  # noqa: E402
     export_markdown,
     filter_records,
     import_json,
+    merge_histories,
+    restore_browser_history,
+    serialize_browser_history,
+    delete_record,
 )
 from rabbithole.semantic_rag import load_uploaded_chunks  # noqa: E402
 
@@ -109,9 +114,10 @@ def render_research(result: dict[str, Any], *, fixture_label: str = "") -> None:
         for item in evidence:
             title = f"[{item['citation_id']}] {item['title']} · {item['stance']} · {item.get('evidence_kind', 'UNCLASSIFIED')}"
             with st.expander(title):
-                st.write(item.get("key_claim") or item["excerpt"])
+                st.write(item.get("key_claim") or item.get("excerpt") or "Evidence text is not available in this restored browser record.")
                 st.caption(item.get("explanation", ""))
-                st.code(item["excerpt"], language=None)
+                if item.get("excerpt"):
+                    st.code(item["excerpt"], language=None)
                 if item["source_type"] == "WEB" and item.get("locator"):
                     st.link_button("Open source", item["locator"])
                 else:
@@ -229,13 +235,15 @@ def render_research_workspace() -> None:
         stage = "run bounded research agent"
         result = agent.research(question, chunks, on_event=show_event, historical_context=st.session_state.pop("continuation_context", ""))
         result_dict = result.to_dict()
-        add_record(st.session_state.research_history, result_dict)
+        parent_run_id = st.session_state.pop("continuation_parent_id", None)
+        add_record(st.session_state.research_history, result_dict, parent_run_id=parent_run_id)
         stage = "render research result"
         status.update(label="Research complete — saved to this session's library", state="complete", expanded=False)
         render_research(result_dict)
     except Exception as exc:
         log_safe_exception("LiveAgent", stage, exc)
-        add_failed_record(st.session_state.research_history, question, type(exc).__name__)
+        parent_run_id = st.session_state.pop("continuation_parent_id", None)
+        add_failed_record(st.session_state.research_history, question, type(exc).__name__, parent_run_id=parent_run_id)
         status.update(label="Research failed safely", state="error")
         st.error(f"Live research could not complete: {type(exc).__name__}. Check provider configuration or rate limits.")
     finally:
@@ -245,6 +253,7 @@ def render_research_workspace() -> None:
 def begin_continuation(record: dict[str, Any]) -> None:
     st.session_state.continuation_context = continuation_context(record)
     st.session_state.continuation_seed = f"Follow up on: {record['question']}"
+    st.session_state.continuation_parent_id = record["id"]
     st.session_state.navigation = "Research"
 
 
@@ -252,7 +261,9 @@ def render_library() -> None:
     st.subheader("Research Library")
     if not private_access():
         return
-    st.caption("Session-scoped archive: records may disappear when this browser session ends or the server restarts. Export anything you want to keep.")
+    st.caption("Saved in this browser's local storage so records can survive reconnects and server restarts. This is not encrypted secure storage; anyone using this browser profile may access it. Local/uploaded source text is excluded. Clear it below or through your browser site-data settings.")
+    if st.session_state.get("browser_storage_error"):
+        st.warning(f"Browser history is unavailable ({st.session_state['browser_storage_error']}). Export important reports manually.")
     with st.expander("Import an exported research record"):
         imported = st.file_uploader("Market RabbitHole JSON", type=["json"], key="history_import")
         if st.button("Import record", disabled=imported is None):
@@ -275,7 +286,7 @@ def render_library() -> None:
             st.session_state.open_record_id = record["id"]
         continue_col.button("Continue Research", key=f"continue-{record['id']}", on_click=begin_continuation, args=(record,))
         if delete_col.button("Delete record", key=f"delete-{record['id']}"):
-            st.session_state.research_history = [item for item in st.session_state.research_history if item["id"] != record["id"]]
+            st.session_state.research_history = delete_record(st.session_state.research_history, record["id"])
             st.rerun()
         export_col, json_col = st.columns(2)
         export_col.download_button("Export Markdown", export_markdown(record), file_name=f"market-rabbithole-{record['id'][:8]}.md", mime="text/markdown", key=f"md-{record['id']}")
@@ -283,10 +294,36 @@ def render_library() -> None:
         if st.session_state.get("open_record_id") == record["id"]:
             with st.container(border=True):
                 render_research(record["result"])
+    if st.button("Clear browser research history", type="secondary"):
+        st.session_state.research_history = []
+        st.session_state.open_record_id = ""
+        st.session_state.browser_storage_clear = True
+        st.rerun()
 
 
 if "research_history" not in st.session_state:
     st.session_state.research_history = []
+if "browser_history_loaded" not in st.session_state:
+    st.session_state.browser_history_loaded = False
+
+storage_authorized = CONFIG.live_agent_enabled and (
+    not CONFIG.live_agent_password or st.session_state.get("private_access_granted", False)
+)
+if storage_authorized:
+    browser_read = mount_browser_storage("read", key="browser-history-reader")
+    if not st.session_state.browser_history_loaded and browser_read.ready:
+        if browser_read.error:
+            st.session_state.browser_storage_error = browser_read.error
+        elif browser_read.payload:
+            try:
+                restored = restore_browser_history(browser_read.payload)
+                st.session_state.research_history = merge_histories(st.session_state.research_history, restored)
+            except ValueError as exc:
+                st.session_state.browser_storage_error = str(exc)
+                st.session_state.browser_storage_clear = True
+        st.session_state.browser_history_loaded = True
+    if st.session_state.get("browser_storage_error"):
+        st.sidebar.warning("Browser research history could not be saved or restored. Open Research Library for details and export important reports manually.")
 
 mode = st.sidebar.radio("Workspace", ["Research", "Research Library", "Demo Gallery"], key="navigation")
 st.sidebar.caption("Demo Gallery is public and offline. Research and Library use the server-side access gate.")
@@ -297,3 +334,16 @@ elif mode == "Research Library":
     render_library()
 else:
     render_research_workspace()
+
+if storage_authorized and st.session_state.browser_history_loaded:
+    try:
+        browser_payload, evicted = serialize_browser_history(st.session_state.research_history)
+        browser_mode = "clear" if st.session_state.pop("browser_storage_clear", False) else "write"
+        browser_write = mount_browser_storage(browser_mode, browser_payload, key="browser-history-writer")
+        if browser_write.error:
+            st.session_state.browser_storage_error = browser_write.error
+        if evicted and st.session_state.get("last_eviction_count") != evicted:
+            st.session_state.last_eviction_count = evicted
+            st.warning(f"Browser history limit reached; {evicted} oldest record(s) were not retained locally.")
+    except ValueError as exc:
+        st.session_state.browser_storage_error = str(exc)
