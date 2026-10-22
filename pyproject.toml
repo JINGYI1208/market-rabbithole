@@ -7,7 +7,7 @@ name = "rabbithole-agent"
 version = "0.2.0"
 description = "A market intelligence agent combining private semantic RAG, Tavily search, and Zhipu synthesis."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.26",
     "pypdf>=4.0",
